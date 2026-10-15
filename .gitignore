@@ -1,0 +1,47 @@
+# Local environment files. .env.example is the committed template.
+.env
+.env.*
+!.env.example
+
+# Dependencies
+node_modules/
+
+# Frontend build output
+dist/
+build/
+
+# TypeScript incremental build info
+*.tsbuildinfo
+
+# Go binaries and build artifacts.
+# A bare "api" pattern would also ignore backend/cmd/api/.
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+bin/
+vendor/
+/backend/api
+/backend/cmd/api/api
+
+# Coverage and test output
+coverage/
+coverage.*
+*.coverprofile
+.nyc_output/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Editor and OS clutter
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+Thumbs.db

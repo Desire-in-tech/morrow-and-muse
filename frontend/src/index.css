@@ -1,0 +1,17 @@
+@import 'tailwindcss';
+
+@import '@fontsource/dm-serif-display/latin-400.css';
+@import '@fontsource/dm-sans/latin-400.css';
+@import '@fontsource/dm-sans/latin-500.css';
+@import '@fontsource/dm-sans/latin-600.css';
+
+@theme {
+  --font-sans: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'DM Serif Display', ui-serif, Georgia, serif;
+  --color-ivory: #f7f2ea;
+  --color-burgundy: #722f3e;
+  --color-ink: #292521;
+  --color-sage: #a8b09a;
+  --color-sandstone: #e8ded0;
+  --color-taupe: #77685e;
+}
