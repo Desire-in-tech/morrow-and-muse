@@ -6,7 +6,7 @@ Thoughtfully chosen. Beautifully lived.
 
 ## Structure
 
-- `frontend/` — React, TypeScript, and Vite. Brand tokens live in `frontend/src/index.css`.
+- `frontend/` — React, TypeScript, and Vite. Brand tokens live in `frontend/src/index.css`. The storefront (`/`, `/shop`, `/collections/:slug`, `/products/:slug`) is a static catalogue with proposed display prices. It does not call the API. Unknown addresses render the not-found page in the client. A static host still returns HTTP 200 for those URLs; mapping them to a real 404 belongs to a later deployment and SEO phase.
 - `backend/` — Go API. Entry point `backend/cmd/api`, router and `GET /health` in `backend/internal/httpapi`.
 - `.github/workflows/ci.yml` — frontend typecheck, lint, format, test, and build; backend gofmt, vet, and test.
 
