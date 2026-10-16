@@ -1,10 +1,45 @@
+import { Link } from 'react-router'
+import { collections } from '../data/catalog.ts'
+import { focusRing } from '../lib/focusRing.ts'
+import { Container } from './Container.tsx'
+
+const footerLinks = [
+  { to: '/', label: 'Home' },
+  { to: '/shop', label: 'Shop' },
+  ...collections.map((collection) => ({
+    to: `/collections/${collection.slug}`,
+    label: collection.name,
+  })),
+]
+
 export function SiteFooter() {
   return (
     <footer className="border-t border-sage">
-      <div className="mx-auto flex w-full max-w-5xl flex-col gap-1 px-5 py-8 text-sm text-taupe sm:flex-row sm:items-center sm:justify-between sm:px-8">
-        <p className="font-display text-base text-burgundy">Morrow & Muse</p>
-        <p>A portfolio boutique</p>
-      </div>
+      <Container className="flex flex-col gap-8 py-10">
+        <div className="flex flex-col gap-2">
+          <p className="font-display text-2xl text-burgundy">morrow & muse</p>
+          <p className="text-sm text-ink">
+            Thoughtfully chosen. Beautifully lived.
+          </p>
+          <p className="max-w-md text-sm leading-relaxed text-ink">
+            Objects for slower mornings, clearer spaces, and everyday rituals.
+          </p>
+        </div>
+        <nav
+          aria-label="Footer"
+          className="flex flex-col gap-1 sm:flex-row sm:flex-wrap sm:gap-x-6"
+        >
+          {footerLinks.map((item) => (
+            <Link
+              key={item.to}
+              to={item.to}
+              className={`inline-flex min-h-11 items-center text-sm text-ink hover:text-burgundy ${focusRing}`}
+            >
+              {item.label}
+            </Link>
+          ))}
+        </nav>
+      </Container>
     </footer>
   )
 }

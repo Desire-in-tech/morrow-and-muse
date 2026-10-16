@@ -16,10 +16,16 @@ describe('shell', () => {
     renderAt('/')
 
     expect(
-      screen.getByRole('heading', { level: 1, name: 'Morrow & Muse' }),
+      screen.getByRole('heading', {
+        level: 1,
+        name: 'Make room for the good things.',
+      }),
     ).toBeInTheDocument()
     expect(
       screen.getByText('Thoughtfully chosen. Beautifully lived.'),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('link', { name: 'morrow & muse' }),
     ).toBeInTheDocument()
   })
 
@@ -27,10 +33,13 @@ describe('shell', () => {
     renderAt('/not-a-real-page')
 
     expect(
-      screen.getByRole('heading', { level: 1, name: 'Page not found' }),
+      screen.getByRole('heading', {
+        level: 1,
+        name: 'This page is taking a quieter path.',
+      }),
     ).toBeInTheDocument()
     expect(
-      screen.getByRole('link', { name: 'Back to home' }),
+      screen.getByRole('link', { name: 'Visit the homepage' }),
     ).toBeInTheDocument()
   })
 })
