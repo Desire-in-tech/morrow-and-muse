@@ -84,3 +84,22 @@ go test ./...
 ```
 
 The API reads `PORT` from the environment and listens on `8080` when it is unset. `.env.example` documents that name. The process does not load `.env` files.
+
+### Database
+
+The catalogue schema lives in `backend/db/migrations`. [goose](https://github.com/pressly/goose) `v3.29.0` is pinned in `backend/go.mod` and applied by the `db` package, not by a global binary:
+
+```bash
+cd backend
+DATABASE_URL='postgres://USER:PASSWORD@HOST:5432/DBNAME?sslmode=require' go run ./cmd/migrate up
+DATABASE_URL='postgres://USER:PASSWORD@HOST:5432/DBNAME?sslmode=require' go run ./cmd/migrate down-to 0
+```
+
+`00001_schema.sql` creates the tables. `00002_seed.sql` inserts the catalogue. Both have Up and Down. The seed is generated from `frontend/src/data/catalog.ts` and is applied once, as a goose version. Regenerate it, without editing the catalogue file, from the repository root:
+
+```bash
+node --experimental-strip-types scripts/export-catalog.ts
+node --experimental-strip-types scripts/export-catalog.ts --check
+```
+
+Integration tests compare the database with `backend/db/testdata/catalog_export.json`, which that script also writes. They skip when `TEST_DATABASE_URL` is unset, and fail in CI if it is unset. CI uses a disposable Postgres 17 container, the same major version Supabase currently defaults to. No hosted database is required for this step.

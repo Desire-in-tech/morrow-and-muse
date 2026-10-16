@@ -1,0 +1,410 @@
+{
+  "logoUrl": "https://res.cloudinary.com/sbll6gvk/image/upload/v1792079260/Logo.png",
+  "heroImage": {
+    "src": "https://res.cloudinary.com/sbll6gvk/image/upload/v1792079279/Homepage_hero.png",
+    "alt": "A quiet bedroom corner with a side table, lamp, and layered neutral bedding."
+  },
+  "featuredProductSlugs": [
+    "everyday-ceramic-mug",
+    "linen-covered-journal",
+    "canvas-tote-bag",
+    "sculptural-table-lamp"
+  ],
+  "collections": [
+    {
+      "slug": "morning-ritual",
+      "name": "Morning Ritual",
+      "description": "Everyday pieces for the first coffee, a slower breakfast and the small routines that help the day begin well.",
+      "image": {
+        "src": "https://res.cloudinary.com/sbll6gvk/image/upload/v1792078635/Home_living.png",
+        "alt": "A breakfast table set with a mug, a bowl of fruit, and a small vase."
+      },
+      "seoTitle": "Morning Ritual | morrow & muse",
+      "metaDescription": "Discover considered pieces for coffee, breakfast and everyday table rituals with morrow & muse.",
+      "sortOrder": 1
+    },
+    {
+      "slug": "workday-edit",
+      "name": "Workday Edit",
+      "description": "Thoughtful stationery and desk essentials for collecting ideas, finding focus and bringing a little order to the working day.",
+      "image": {
+        "src": "https://res.cloudinary.com/sbll6gvk/image/upload/v1792076358/Desk_stationary.png",
+        "alt": "A desk arranged with a notebook, pens, and a wooden organizer."
+      },
+      "seoTitle": "Workday Edit | morrow & muse",
+      "metaDescription": "Explore understated journals, notebooks, writing tools and desk organisation for a more considered workspace.",
+      "sortOrder": 2
+    },
+    {
+      "slug": "everyday-carry",
+      "name": "Everyday Carry",
+      "description": "Practical companions for commutes, errands and the everyday essentials you take wherever the day leads.",
+      "image": {
+        "src": "https://res.cloudinary.com/sbll6gvk/image/upload/v1792076237/Everyday_essentials.png",
+        "alt": "A tote bag, bottle, pouch, and small tray arranged together."
+      },
+      "seoTitle": "Everyday Carry | morrow & muse",
+      "metaDescription": "Discover everyday bags, a reusable bottle, a travel pouch and small accessories selected for life on the move.",
+      "sortOrder": 3
+    },
+    {
+      "slug": "quiet-space",
+      "name": "Quiet Space",
+      "description": "Understated lighting, textiles and decorative accents for making your home feel more personal and considered.",
+      "image": {
+        "src": "https://res.cloudinary.com/sbll6gvk/image/upload/v1792078654/Home_accessories.png",
+        "alt": "A living area with a table lamp, cushion, tray, and small planter."
+      },
+      "seoTitle": "Quiet Space | morrow & muse",
+      "metaDescription": "Explore understated home accents, including a sculptural table lamp, linen cushion cover, decorative tray and ceramic planter.",
+      "sortOrder": 4
+    }
+  ],
+  "products": [
+    {
+      "id": "mm-01",
+      "slug": "everyday-ceramic-mug",
+      "name": "The Everyday Ceramic Mug",
+      "priceCents": 2800,
+      "collectionSlug": "morning-ritual",
+      "summary": "A considered companion for your first coffee, afternoon tea or any small pause worth taking.",
+      "description": "Make a little more of the everyday. The Everyday Ceramic Mug brings a simple, understated presence to the moments that bookend your day, from a quiet first coffee to an unhurried cup of tea. Its clean silhouette sits comfortably within a thoughtfully arranged kitchen or on a well-loved desk.",
+      "highlights": [
+        "Made for everyday coffee and tea rituals.",
+        "An understated shape that complements a considered table.",
+        "Easy to pair with the rest of the Morning Ritual collection."
+      ],
+      "cardImage": {
+        "src": "https://res.cloudinary.com/sbll6gvk/image/upload/v1792079402/product_card_ceramic_coffee_mug.png",
+        "alt": "Ceramic coffee mug photographed in a warm, neutral setting."
+      },
+      "detailImage": {
+        "src": "https://res.cloudinary.com/sbll6gvk/image/upload/v1792079748/product_detail_image_ceramic_coffee_mug.png",
+        "alt": "Ceramic coffee mug photographed in a warm, neutral setting."
+      },
+      "sortOrder": 1
+    },
+    {
+      "id": "mm-02",
+      "slug": "stoneware-breakfast-bowl",
+      "name": "The Stoneware Breakfast Bowl",
+      "priceCents": 3400,
+      "collectionSlug": "morning-ritual",
+      "summary": "A simple, versatile bowl for breakfast, fruit and everyday table moments.",
+      "description": "From a slow breakfast to a handful of seasonal fruit, the Stoneware Breakfast Bowl gives everyday serving a calmer, more considered feel. Its understated design makes it an easy addition to a relaxed table, whether used on its own or alongside your favourite morning pieces.",
+      "highlights": [
+        "Suited to breakfast and everyday serving.",
+        "A restrained look that works across different table settings.",
+        "Designed to complement the Morning Ritual collection."
+      ],
+      "cardImage": {
+        "src": "https://res.cloudinary.com/sbll6gvk/image/upload/v1792079570/product_card_stoneware_breakfast_bowel.png",
+        "alt": "Stoneware breakfast bowl displayed in a softly lit neutral setting."
+      },
+      "detailImage": {
+        "src": "https://res.cloudinary.com/sbll6gvk/image/upload/v1792079727/product_detail_image_breakfast_bowl.png",
+        "alt": "Stoneware breakfast bowl displayed in a softly lit neutral setting."
+      },
+      "sortOrder": 2
+    },
+    {
+      "id": "mm-03",
+      "slug": "minimal-ceramic-vase",
+      "name": "The Minimal Ceramic Vase",
+      "priceCents": 4200,
+      "collectionSlug": "morning-ritual",
+      "summary": "An understated decorative accent for a single stem or a quiet corner.",
+      "description": "Sometimes a room needs only one thoughtful detail. The Minimal Ceramic Vase brings a simple sculptural note to a shelf, bedside table or dining surface. Style it with a favourite stem or let its silhouette stand on its own as part of a calm, collected space.",
+      "highlights": [
+        "Works as a standalone decorative accent.",
+        "Pairs naturally with neutral interiors.",
+        "Easy to style on shelves, tables and smaller surfaces."
+      ],
+      "cardImage": {
+        "src": "https://res.cloudinary.com/sbll6gvk/image/upload/v1792079435/product_card_minimal_ceramic_vase.png",
+        "alt": "Minimal ceramic vase styled as a decorative accent."
+      },
+      "detailImage": {
+        "src": "https://res.cloudinary.com/sbll6gvk/image/upload/v1792079824/product_detail_image_minimal_ceramic_vase.png",
+        "alt": "Minimal ceramic vase styled as a decorative accent."
+      },
+      "sortOrder": 3
+    },
+    {
+      "id": "mm-04",
+      "slug": "linen-covered-journal",
+      "name": "The Linen-Covered Journal",
+      "priceCents": 3200,
+      "collectionSlug": "workday-edit",
+      "summary": "A considered place for thoughts, plans, lists and ideas worth returning to.",
+      "description": "Give your thoughts somewhere to land. The Linen-Covered Journal is made for morning pages, meeting notes, passing ideas and the plans you want to keep close. Its tactile, understated appearance brings a quieter feeling to the everyday habit of putting pen to paper.",
+      "highlights": [
+        "For journaling, lists, notes and personal planning.",
+        "An understated cover that sits naturally on a desk or bedside table.",
+        "A thoughtful addition to a daily writing ritual."
+      ],
+      "cardImage": {
+        "src": "https://res.cloudinary.com/sbll6gvk/image/upload/v1792079412/product_card_linen_covered_journal.png",
+        "alt": "Linen-covered journal arranged on a neutral desk."
+      },
+      "detailImage": {
+        "src": "https://res.cloudinary.com/sbll6gvk/image/upload/v1792079765/product_detail_image_linen_covered_journal.png",
+        "alt": "Linen-covered journal arranged on a neutral desk."
+      },
+      "sortOrder": 4
+    },
+    {
+      "id": "mm-05",
+      "slug": "wooden-desk-organizer",
+      "name": "The Wooden Desk Organizer",
+      "priceCents": 4800,
+      "collectionSlug": "workday-edit",
+      "summary": "A warm, practical home for the small essentials that make up your working day.",
+      "description": "A clearer desk can make room for clearer thinking. The Wooden Desk Organizer gives everyday workspace essentials a more intentional place, helping pens and frequently used items feel considered rather than scattered. Keep it within reach on a home-office desk or study surface.",
+      "highlights": [
+        "Helps bring order to everyday desk essentials.",
+        "Adds a warm visual accent to a workspace.",
+        "Designed to sit naturally alongside notebooks and writing tools."
+      ],
+      "cardImage": {
+        "src": "https://res.cloudinary.com/sbll6gvk/image/upload/v1792079587/product_card_wooden_desk_organizer.png",
+        "alt": "Wooden desk organizer arranged with everyday stationery."
+      },
+      "detailImage": {
+        "src": "https://res.cloudinary.com/sbll6gvk/image/upload/v1792079928/product_detail_image_wooden_desk_organizer.png",
+        "alt": "Wooden desk organizer arranged with everyday stationery."
+      },
+      "sortOrder": 5
+    },
+    {
+      "id": "mm-06",
+      "slug": "black-pen-set",
+      "name": "The Black Pen Set",
+      "priceCents": 2400,
+      "collectionSlug": "workday-edit",
+      "summary": "Understated writing essentials for notes, lists and ideas in progress.",
+      "description": "Good writing tools belong where ideas happen. The Black Pen Set brings a clean, coordinated look to daily notes, work lists and pages of unfinished thoughts. Keep it beside your journal or notebook so the next idea is always ready to be written down.",
+      "highlights": [
+        "For everyday writing and note-taking.",
+        "A restrained look that pairs with the Workday Edit collection.",
+        "A useful desk companion or considered gift."
+      ],
+      "cardImage": {
+        "src": "https://res.cloudinary.com/sbll6gvk/image/upload/v1792079381/product_card_black_pen_set.png",
+        "alt": "Black pen set presented with coordinated stationery."
+      },
+      "detailImage": {
+        "src": "https://res.cloudinary.com/sbll6gvk/image/upload/v1792079705/product_detail_image_black_pen_set.png",
+        "alt": "Black pen set presented with coordinated stationery."
+      },
+      "sortOrder": 6
+    },
+    {
+      "id": "mm-07",
+      "slug": "neutral-notebook",
+      "name": "The Neutral Notebook",
+      "priceCents": 2200,
+      "collectionSlug": "workday-edit",
+      "summary": "An everyday notebook for working thoughts, quick lists and new ideas.",
+      "description": "Keep the moving parts of your day in one simple place. The Neutral Notebook is intended for the lists, notes, sketches and reminders that help ideas take shape. Its quiet presentation fits neatly into a home workspace, a study corner or an everyday bag.",
+      "highlights": [
+        "Suited to lists, notes and everyday planning.",
+        "An understated addition to a desk or bag.",
+        "Easy to pair with the Black Pen Set and Linen-Covered Journal."
+      ],
+      "cardImage": {
+        "src": "https://res.cloudinary.com/sbll6gvk/image/upload/v1792079523/product_card_neutral_notebook.png",
+        "alt": "Neutral notebook styled on a tidy workspace."
+      },
+      "detailImage": {
+        "src": "https://res.cloudinary.com/sbll6gvk/image/upload/v1792079877/product_detail_image_neutral_notebook.png",
+        "alt": "Neutral notebook styled on a tidy workspace."
+      },
+      "sortOrder": 7
+    },
+    {
+      "id": "mm-08",
+      "slug": "reusable-insulated-bottle",
+      "name": "The Reusable Insulated Bottle",
+      "priceCents": 3600,
+      "collectionSlug": "everyday-carry",
+      "summary": "A reusable bottle for workdays, errands and time spent out and about.",
+      "description": "A useful everyday essential should fit into the rhythm of your day. The Reusable Insulated Bottle is designed to accompany your commute, work bag, errands and time outdoors. Its clean, understated appearance makes it a natural fit with the other pieces in the Everyday Carry collection.",
+      "highlights": [
+        "Designed for repeated everyday use.",
+        "Suited to workdays and time on the move.",
+        "A coordinated addition to an everyday carry setup."
+      ],
+      "cardImage": {
+        "src": "https://res.cloudinary.com/sbll6gvk/image/upload/v1792079534/product_card_reusable_insulated_bottle.png",
+        "alt": "Reusable insulated bottle photographed in a neutral setting."
+      },
+      "detailImage": {
+        "src": "https://res.cloudinary.com/sbll6gvk/image/upload/v1792079891/product_detail_image_reusable_insulated_bottle.png",
+        "alt": "Reusable insulated bottle photographed in a neutral setting."
+      },
+      "sortOrder": 8
+    },
+    {
+      "id": "mm-09",
+      "slug": "canvas-tote-bag",
+      "name": "The Canvas Tote Bag",
+      "priceCents": 3000,
+      "collectionSlug": "everyday-carry",
+      "summary": "A straightforward carry-all for the everyday things you want close at hand.",
+      "description": "From a quick trip out to a day of errands, the Canvas Tote Bag offers an uncomplicated way to carry everyday essentials. Its relaxed, versatile look works with a range of daily routines, making it a natural companion for the pieces you reach for most often.",
+      "highlights": [
+        "Suited to errands and everyday outings.",
+        "An easy addition to a practical daily carry.",
+        "Coordinates with the Everyday Carry collection."
+      ],
+      "cardImage": {
+        "src": "https://res.cloudinary.com/sbll6gvk/image/upload/v1792079390/product_card_canvas_tote_bag.png",
+        "alt": "Canvas tote bag styled as an everyday carry accessory."
+      },
+      "detailImage": {
+        "src": "https://res.cloudinary.com/sbll6gvk/image/upload/v1792079736/product_detail_image_canvas_tote_bag.png",
+        "alt": "Canvas tote bag styled as an everyday carry accessory."
+      },
+      "sortOrder": 9
+    },
+    {
+      "id": "mm-10",
+      "slug": "minimal-travel-pouch",
+      "name": "The Minimal Travel Pouch",
+      "priceCents": 2600,
+      "collectionSlug": "everyday-carry",
+      "summary": "A considered way to keep small essentials together when you are on the move.",
+      "description": "The little things are easier to find when they have a place of their own. The Minimal Travel Pouch is suited to organising the small essentials you take between home, work and time away. Keep it inside your everyday bag or pack it when your routine takes you somewhere new.",
+      "highlights": [
+        "Helps organise small everyday essentials.",
+        "Suited to bags, commutes and travel.",
+        "A simple companion to the Canvas Tote Bag."
+      ],
+      "cardImage": {
+        "src": "https://res.cloudinary.com/sbll6gvk/image/upload/v1792079484/product_card_minimal_travel_pouch.png",
+        "alt": "Minimal travel pouch displayed with everyday carry essentials."
+      },
+      "detailImage": {
+        "src": "https://res.cloudinary.com/sbll6gvk/image/upload/v1792079849/product_detail_image_minmal_travel_pouch.png",
+        "alt": "Minimal travel pouch displayed with everyday carry essentials."
+      },
+      "sortOrder": 10
+    },
+    {
+      "id": "mm-11",
+      "slug": "everyday-accessory-tray",
+      "name": "The Everyday Accessory Tray",
+      "priceCents": 2400,
+      "collectionSlug": "everyday-carry",
+      "summary": "A small landing place for the everyday pieces you do not want to misplace.",
+      "description": "Give your daily essentials a place to land. The Everyday Accessory Tray helps gather the small items you reach for when leaving home or settling in for the evening. Place it on an entry table, bedside surface or desk to bring a little more order to the everyday.",
+      "highlights": [
+        "For organising small daily essentials.",
+        "Suited to entry tables, desks and bedside surfaces.",
+        "Pairs naturally with the Quiet Space collection."
+      ],
+      "cardImage": {
+        "src": "https://res.cloudinary.com/sbll6gvk/image/upload/v1792079305/product_card_accessory_tray.png",
+        "alt": "Accessory tray arranged on a tidy surface."
+      },
+      "detailImage": {
+        "src": "https://res.cloudinary.com/sbll6gvk/image/upload/v1792079691/product_detail_image_accessory_tray.png",
+        "alt": "Accessory tray arranged on a tidy surface."
+      },
+      "sortOrder": 11
+    },
+    {
+      "id": "mm-12",
+      "slug": "sculptural-table-lamp",
+      "name": "The Sculptural Table Lamp",
+      "priceCents": 14800,
+      "collectionSlug": "quiet-space",
+      "summary": "A sculptural lighting accent for evenings, reading corners and slower moments.",
+      "description": "Lighting helps set the feeling of a room. The Sculptural Table Lamp brings a considered focal point to a bedside table, reading corner or side table. Its expressive form can sit comfortably among other carefully chosen objects or hold its own as a quiet statement piece.",
+      "highlights": [
+        "A decorative lighting accent for considered interiors.",
+        "Suited to bedside tables and reading corners.",
+        "Pairs with neutral furnishings and understated decor."
+      ],
+      "cardImage": {
+        "src": "https://res.cloudinary.com/sbll6gvk/image/upload/v1792079542/product_card_sculptual_table_lamp.png",
+        "alt": "Sculptural table lamp displayed in a warm, quiet interior."
+      },
+      "detailImage": {
+        "src": "https://res.cloudinary.com/sbll6gvk/image/upload/v1792079904/product_detail_image_sculptural_table_lamp.png",
+        "alt": "Sculptural table lamp displayed in a warm, quiet interior."
+      },
+      "sortOrder": 12
+    },
+    {
+      "id": "mm-13",
+      "slug": "linen-cushion-cover",
+      "name": "The Linen Cushion Cover",
+      "priceCents": 4600,
+      "collectionSlug": "quiet-space",
+      "summary": "A simple textile accent for adding softness and a more considered finish to a room.",
+      "description": "Small changes can shift the feeling of a space. The Linen Cushion Cover brings a relaxed textile layer to a sofa, armchair or bed, complementing a palette of quiet neutrals and natural-looking textures. Use it as a subtle finishing touch or combine it with other understated furnishings.",
+      "highlights": [
+        "A textile accent for sofas, chairs and beds.",
+        "Suited to calm, neutral interiors.",
+        "Easy to incorporate into a considered home palette."
+      ],
+      "cardImage": {
+        "src": "https://res.cloudinary.com/sbll6gvk/image/upload/v1792079423/product_card_linen_cushion_cover.png",
+        "alt": "Linen cushion cover styled on neutral furnishings."
+      },
+      "detailImage": {
+        "src": "https://res.cloudinary.com/sbll6gvk/image/upload/v1792079811/product_detail_image_linen_sushion_cover.png",
+        "alt": "Linen cushion cover styled on neutral furnishings."
+      },
+      "sortOrder": 13
+    },
+    {
+      "id": "mm-14",
+      "slug": "minimal-decorative-tray",
+      "name": "The Minimal Decorative Tray",
+      "priceCents": 3800,
+      "collectionSlug": "quiet-space",
+      "summary": "A quiet styling piece that brings smaller objects together into one considered arrangement.",
+      "description": "A few favourite objects can feel more intentional when arranged together. The Minimal Decorative Tray provides a simple base for styling a coffee table, console or shelf. Use it to bring visual order to a small grouping or let it contribute its own understated shape to the room.",
+      "highlights": [
+        "For styling and arranging decorative objects.",
+        "Suited to coffee tables, shelves and consoles.",
+        "Complements the Quiet Space collection."
+      ],
+      "cardImage": {
+        "src": "https://res.cloudinary.com/sbll6gvk/image/upload/v1792079447/product_card_minimal_decorative_tray.png",
+        "alt": "Minimal decorative tray styled with carefully arranged home objects."
+      },
+      "detailImage": {
+        "src": "https://res.cloudinary.com/sbll6gvk/image/upload/v1792079837/product_detail_image_minimal_decorative_tray.png",
+        "alt": "Minimal decorative tray styled with carefully arranged home objects."
+      },
+      "sortOrder": 14
+    },
+    {
+      "id": "mm-15",
+      "slug": "small-ceramic-planter",
+      "name": "The Small Ceramic Planter",
+      "priceCents": 3200,
+      "collectionSlug": "quiet-space",
+      "summary": "A compact ceramic accent for bringing a little greenery into a considered space.",
+      "description": "A small touch of greenery can make a space feel more personal. The Small Ceramic Planter is designed to sit naturally on a desk, shelf or windowsill, adding a simple decorative element to everyday surroundings. Pair it with other quiet accents or allow it to bring a little life to a smaller corner.",
+      "highlights": [
+        "Suited to small decorative planting arrangements.",
+        "An understated accent for desks, shelves and windowsills.",
+        "Works naturally with the Quiet Space collection."
+      ],
+      "cardImage": {
+        "src": "https://res.cloudinary.com/sbll6gvk/image/upload/v1792079555/product_card_small_ceramic_plant.png",
+        "alt": "Small ceramic planter styled as a home accent."
+      },
+      "detailImage": {
+        "src": "https://res.cloudinary.com/sbll6gvk/image/upload/v1792079915/product_detail_image_small_ceramic_plant.png",
+        "alt": "Small ceramic planter styled as a home accent."
+      },
+      "sortOrder": 15
+    }
+  ]
+}
