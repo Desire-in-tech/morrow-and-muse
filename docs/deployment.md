@@ -81,25 +81,89 @@ The running API can speak transaction mode because `dbpool` forces the simple pr
 
 ### Migrate from a laptop
 
-Run this only when you have a real Supabase project. The URL stays in the shell. Do not write it into a file in this repo, and do not pass it as a command-line argument (those show up in process listings and shell history more widely than an env assignment).
+Run this only when you have a real Supabase project. The connection string is a secret. A shell history file, the process list (`ps` and `/proc/<pid>/cmdline`), a terminal log, and a shared screen all keep what you type on a command line. `DATABASE_URL='postgresql://...' go run ...` and `psql 'postgresql://...'` put the URL there. Type it at a hidden prompt, leave it in the environment for the one command, then remove it. Do not paste it into an issue, a CI log, or a file in this repository.
+
+`cmd/migrate` accepts `up` or `down-to` and reads the URL with `os.Getenv("DATABASE_URL")`. There is no URL flag. A successful run prints nothing. On failure it prints `migrate:` and the error text. This command does not log the URL. goose is given an open database handle, not the URL string. If pgx cannot parse the URL, its error text redacts a recognizable password and can still include the host; a malformed URL can be too ambiguous to redact completely. Do not paste that output into an issue.
+
+#### macOS and Linux (bash or zsh)
+
+`read -rs` is raw (`-r`, so a backslash in the password stays) and silent (`-s`). Bash accepts the combined flag. Zsh does too: flags that take no argument combine, `-r` is raw mode, and `-s` does not echo when the input comes from the terminal ([zsh `read`](https://zsh.sourceforge.io/Doc/Release/Shell-Builtin-Commands.html)). With one variable, both shells assign the whole line, including any spaces. Percent-encode reserved characters in the password before you paste. Turn xtrace off first (`set +x` in bash, `unsetopt xtrace` in zsh); xtrace prints assignments.
 
 ```bash
 cd backend
-DATABASE_URL='postgresql://postgres.[PROJECT-REF]:[PASSWORD]@[POOLER-HOST]:5432/postgres?sslmode=require' \
-  go run ./cmd/migrate up
+printf 'DATABASE_URL (input hidden): '
+read -rs DATABASE_URL
+printf '\n'
+export DATABASE_URL
+go run ./cmd/migrate up
+unset DATABASE_URL
 ```
 
-The command exits 0 when both versions are applied. To confirm, using the same session URI and still without committing it:
+Paste the session-pooler URI at the hidden prompt: port `5432` and `sslmode=require`. The paste is not a shell command, so it is not written to history. `export` and `go run` do not receive the URL as an argument. `unset` removes it from this shell. The same sequence with `go run ./cmd/migrate down-to 0` drops the catalogue objects. Do not run that against a database you mean to keep.
+
+The bash sequence above was run against a disposable local Postgres (migrate exited 0, then `unset` cleared the variable). Zsh was not installed in that environment; the zsh flags are from the manual linked above.
+
+#### Windows PowerShell
+
+`Read-Host -AsSecureString` masks each typed character with `*`. The URL is not part of the command, so PSReadLine does not store it. This cmdlet exists in Windows PowerShell 5.1 and in PowerShell 7.
+
+PowerShell 7.0 and later can recover the text with `-AsPlainText` ([ConvertFrom-SecureString](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.security/convertfrom-securestring?view=powershell-7.5)). Windows PowerShell 5.1 has no `-AsPlainText`; it needs the Marshal calls below. Assign `$env:DATABASE_URL` only. Do not call `[Environment]::SetEnvironmentVariable` with a `User` or `Machine` target, which would keep the URL after the window closes. These snippets were checked against that documentation and were not executed here.
+
+PowerShell 7:
+
+```powershell
+Set-Location backend
+$secure = Read-Host -AsSecureString -Prompt 'DATABASE_URL'
+$env:DATABASE_URL = ConvertFrom-SecureString -SecureString $secure -AsPlainText
+go run ./cmd/migrate up
+Remove-Item Env:DATABASE_URL
+```
+
+Windows PowerShell 5.1:
+
+```powershell
+Set-Location backend
+$secure = Read-Host -AsSecureString -Prompt 'DATABASE_URL'
+$ptr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($secure)
+try {
+  $env:DATABASE_URL = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($ptr)
+} finally {
+  [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($ptr)
+}
+go run ./cmd/migrate up
+Remove-Item Env:DATABASE_URL
+```
+
+`Remove-Item Env:DATABASE_URL` drops the variable from this process. Close the window afterwards.
+
+#### Check with psql
+
+Do not pass the URI to `psql`. Set the non-secret libpq variables and let `psql` prompt for the password. `-W` forces the prompt. The password is not an argument. Do not set `PGPASSWORD`; it is visible in the process list.
 
 ```bash
-psql "$DATABASE_URL" -c 'select version_id from goose_db_version order by version_id;'
-psql "$DATABASE_URL" -c 'select count(*) from collections;'
-psql "$DATABASE_URL" -c 'select count(*) from products;'
+export PGHOST='aws-[INDEX]-[REGION].pooler.supabase.com'
+export PGPORT=5432
+export PGUSER='postgres.[PROJECT-REF]'
+export PGDATABASE=postgres
+export PGSSLMODE=require
+psql -W \
+  -c 'select version_id, is_applied from goose_db_version order by id;' \
+  -c 'select count(*) from collections;' \
+  -c 'select count(*) from products;'
+unset PGHOST PGPORT PGUSER PGDATABASE PGSSLMODE
 ```
 
-Expect goose versions `1` and `2`, 4 collections, and 15 products. This review did not run those commands against a hosted database.
+Copy `PGHOST` from the Connect dialog. `PGSSLMODE=require` is the minimum. `verify-full`, with `PGSSLROOTCERT` pointing at the root certificate from Database settings in the Supabase dashboard, also checks the server name ([SSL](https://supabase.com/docs/guides/database/connecting-to-postgres#connecting-with-ssl)). Do not use `disable`, `allow`, or `prefer`.
 
-`go run ./cmd/migrate down-to 0` drops those objects. Do not run it against a database you mean to keep.
+`goose_db_version` has `id`, `version_id`, `is_applied`, and `tstamp`. goose inserts `version_id` 0 when it creates that table. This module then applies version 1 (schema) and version 2 (seed). Expect `0`, `1`, and `2`, each with `is_applied` true, plus 4 collections and 15 products. The queries contain no secrets.
+
+To skip the prompt, one line in `~/.pgpass` (Windows: `%APPDATA%\postgresql\pgpass.conf`) is enough:
+
+```text
+[POOLER-HOST]:5432:postgres:postgres.[PROJECT-REF]:[PASSWORD]
+```
+
+On macOS and Linux, `chmod 600` that file. Escape `:` and `\` in the password with a backslash. Delete the file when you are finished.
 
 ## Vercel
 
@@ -155,7 +219,7 @@ Credentials stay off. The storefront only sends `GET`. An allowed preflight retu
 ## Order of operations
 
 1. Create the Supabase Free project. Copy the session-pooler URI (port 5432) and add `sslmode=require`. Do not enable the IPv4 add-on.
-2. From a laptop, with `DATABASE_URL` only in the shell, run `go run ./cmd/migrate up` in `backend/`, then the `psql` counts above.
+2. From a laptop, type the session-pooler URI at the hidden prompt in [Migrate from a laptop](#migrate-from-a-laptop), run `go run ./cmd/migrate up`, unset `DATABASE_URL`, then run the `psql` checks with the `PG*` variables.
 3. Create the Render free web service from `render.yaml` (or enter the same settings by hand). Set `DATABASE_URL` to that session URI. Set `CORS_ALLOWED_ORIGINS` to `http://localhost:5173`.
 4. Create the Vercel Hobby project with the settings in the table above. Set `VITE_API_BASE_URL` to the Render origin (`https://<service>.onrender.com`, no trailing slash) and deploy.
 5. Replace Render’s `CORS_ALLOWED_ORIGINS` with `https://<project>.vercel.app` (no trailing slash) and save so Render restarts.

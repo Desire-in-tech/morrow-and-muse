@@ -115,9 +115,11 @@ The catalogue schema lives in `backend/db/migrations`. [goose](https://github.co
 
 ```bash
 cd backend
-DATABASE_URL='postgres://USER:PASSWORD@HOST:5432/DBNAME?sslmode=require' go run ./cmd/migrate up
-DATABASE_URL='postgres://USER:PASSWORD@HOST:5432/DBNAME?sslmode=require' go run ./cmd/migrate down-to 0
+go run ./cmd/migrate up
+go run ./cmd/migrate down-to 0
 ```
+
+`cmd/migrate` reads `DATABASE_URL` from the environment. Do not put the URL on the command line. [docs/deployment.md](docs/deployment.md) shows how to type it without saving it in shell history, and how to check the tables with `psql` without passing the URL.
 
 `00001_schema.sql` creates the tables. `00002_seed.sql` inserts the catalogue. Both have Up and Down. The seed is generated from `frontend/src/data/catalog.ts` and is applied once, as a goose version. Regenerate it, without editing the catalogue file, from the repository root:
 
