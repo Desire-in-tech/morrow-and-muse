@@ -10,6 +10,10 @@ Thoughtfully chosen. Beautifully lived.
 - `backend/` — Go API. Entry point `backend/cmd/api`. Routes live in `backend/internal/httpapi`. Migrations stay in `backend/cmd/migrate` and are not run by the API.
 - `.github/workflows/ci.yml` — frontend typecheck, lint, format, test, and build; backend gofmt, vet, and test against a disposable Postgres 17 service.
 
+## Deployment
+
+Hosting notes for a $0 portfolio demo (Supabase Free, Render Free, Vercel Hobby) are in [docs/deployment.md](docs/deployment.md). That guide is configuration only. It does not create accounts or deploy anything.
+
 ## Requirements
 
 - Node.js **24.22.0** (Active LTS, Krypton), pinned in `.nvmrc` and `frontend/package.json` `engines`.
