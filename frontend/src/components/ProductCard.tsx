@@ -1,11 +1,14 @@
 import { Link } from 'react-router'
-import { getCollection, type Product } from '../data/catalog.ts'
+import { findCollection } from '../api/catalogSession.ts'
+import { useCatalog } from '../api/useCatalog.ts'
+import type { Product } from '../data/catalog.ts'
 import { focusRing } from '../lib/focusRing.ts'
 import { formatPrice } from '../lib/money.ts'
 import { CatalogPlaceholder } from './CatalogPlaceholder.tsx'
 
 export function ProductCard({ product }: { product: Product }) {
-  const collection = getCollection(product.collectionSlug)
+  const catalog = useCatalog()
+  const collection = findCollection(catalog, product.collectionSlug)
 
   return (
     <article className="min-w-0">

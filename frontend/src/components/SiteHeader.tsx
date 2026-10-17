@@ -1,23 +1,24 @@
 import { Menu, X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { Link, NavLink, useLocation } from 'react-router'
-import { collections, logoUrl } from '../data/catalog.ts'
+import { useCatalog } from '../api/useCatalog.ts'
+import { logoUrl } from '../data/catalog.ts'
 import { focusRing } from '../lib/focusRing.ts'
 import { Container } from './Container.tsx'
 
 const menuId = 'primary-menu'
 
-const navLinks = [
-  { to: '/', label: 'Home', end: true },
-  { to: '/shop', label: 'Shop', end: true },
-  ...collections.map((collection) => ({
-    to: `/collections/${collection.slug}`,
-    label: collection.name,
-    end: true,
-  })),
-]
-
 export function SiteHeader() {
+  const { collections } = useCatalog()
+  const navLinks = [
+    { to: '/', label: 'Home', end: true },
+    { to: '/shop', label: 'Shop', end: true },
+    ...collections.map((collection) => ({
+      to: `/collections/${collection.slug}`,
+      label: collection.name,
+      end: true,
+    })),
+  ]
   const { pathname } = useLocation()
   const [openPath, setOpenPath] = useState<string | null>(null)
   const open = openPath === pathname
