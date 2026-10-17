@@ -10,6 +10,10 @@ Thoughtfully chosen. Beautifully lived.
 - `backend/` — Go API. Entry point `backend/cmd/api`. Routes live in `backend/internal/httpapi`. Migrations stay in `backend/cmd/migrate` and are not run by the API.
 - `.github/workflows/ci.yml` — frontend typecheck, lint, format, test, and build; backend gofmt, vet, and test against a disposable Postgres 17 service.
 
+## Deployment
+
+Hosting notes for a $0 portfolio demo (Supabase Free, Render Free, Vercel Hobby) are in [docs/deployment.md](docs/deployment.md). That guide is configuration only. It does not create accounts or deploy anything.
+
 ## Requirements
 
 - Node.js **24.22.0** (Active LTS, Krypton), pinned in `.nvmrc` and `frontend/package.json` `engines`.
@@ -111,9 +115,11 @@ The catalogue schema lives in `backend/db/migrations`. [goose](https://github.co
 
 ```bash
 cd backend
-DATABASE_URL='postgres://USER:PASSWORD@HOST:5432/DBNAME?sslmode=require' go run ./cmd/migrate up
-DATABASE_URL='postgres://USER:PASSWORD@HOST:5432/DBNAME?sslmode=require' go run ./cmd/migrate down-to 0
+go run ./cmd/migrate up
+go run ./cmd/migrate down-to 0
 ```
+
+`cmd/migrate` reads `DATABASE_URL` from the environment. Do not put the URL on the command line. [docs/deployment.md](docs/deployment.md) shows how to type it without saving it in shell history, and how to check the tables with `psql` without passing the URL.
 
 `00001_schema.sql` creates the tables. `00002_seed.sql` inserts the catalogue. Both have Up and Down. The seed is generated from `frontend/src/data/catalog.ts` and is applied once, as a goose version. Regenerate it, without editing the catalogue file, from the repository root:
 
