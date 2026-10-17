@@ -7,8 +7,8 @@ Thoughtfully chosen. Beautifully lived.
 ## Structure
 
 - `frontend/` — React, TypeScript, and Vite. Brand tokens live in `frontend/src/index.css`. The storefront (`/`, `/shop`, `/collections/:slug`, `/products/:slug`) is a static catalogue with proposed display prices. It does not call the API. Unknown addresses render the not-found page in the client. A static host still returns HTTP 200 for those URLs; mapping them to a real 404 belongs to a later deployment and SEO phase.
-- `backend/` — Go API. Entry point `backend/cmd/api`, router and `GET /health` in `backend/internal/httpapi`.
-- `.github/workflows/ci.yml` — frontend typecheck, lint, format, test, and build; backend gofmt, vet, and test.
+- `backend/` — Go API. Entry point `backend/cmd/api`. Routes live in `backend/internal/httpapi`. Migrations stay in `backend/cmd/migrate` and are not run by the API.
+- `.github/workflows/ci.yml` — frontend typecheck, lint, format, test, and build; backend gofmt, vet, and test against a disposable Postgres 17 service.
 
 ## Requirements
 
@@ -73,7 +73,25 @@ With that process running, the health command is:
 curl -sS http://127.0.0.1:8080/health
 ```
 
-`GET /health` returns `{"status":"ok"}` with `Content-Type: application/json`.
+`GET /health` does not touch the database. It returns `{"status":"ok"}`.
+
+`GET /ready` pings the database with a one-second timeout. It returns `{"status":"ready"}` or, when the database is unreachable, `503` and `{"error":{"code":"service_unavailable","message":"Not ready."}}`.
+
+Catalogue responses use `{"data": ...}`. Errors use `{"error":{"code":"...","message":"..."}}`. Unknown paths are `404` `not_found`. Other methods are `405` `method_not_allowed`. The API accepts `GET` and CORS preflight `OPTIONS` only.
+
+`GET /api/v1/collections` returns the four collections in display order. `name` is the display title. Each item has `slug`, `name`, `description`, `image` (`src`, `alt`), `seoTitle`, `metaDescription`, and `sortOrder`.
+
+`GET /api/v1/products` returns all 15 products in display order. `GET /api/v1/products/{slug}` returns one. A slug must match `^[a-z0-9]+(-[a-z0-9]+)*$`; a malformed slug is `400` `bad_request` with message `Slug is invalid.` A well-formed unknown slug is `404` `not_found` with message `Product not found.` A product has `id`, `slug`, `name` (the display title), `priceCents`, `collection` (`slug`, `name`), `summary`, `description`, `highlights` (exactly three strings), `cardImage`, `detailImage`, and `sortOrder`.
+
+```json
+{"data":{"id":"mm-01","slug":"everyday-ceramic-mug","name":"Everyday Ceramic Mug","priceCents":2800,"collection":{"slug":"morning-ritual","name":"Morning Ritual"},"summary":"...","description":"...","highlights":["...","...","..."],"cardImage":{"src":"https://...","alt":"..."},"detailImage":{"src":"https://...","alt":"..."},"sortOrder":1}}
+```
+
+Unexpected database failures are `500` `{"error":{"code":"internal","message":"Something went wrong."}}`. The response and the log omit SQL and connection strings.
+
+Browser callers send an `Origin`. `CORS_ALLOWED_ORIGINS` is a comma-separated allowlist with no wildcard. Local Vite is `http://localhost:5173`. An allowed origin receives `Access-Control-Allow-Origin` set to that origin, `Vary: Origin`, and methods `GET, OPTIONS`. Credentials are not allowed. A missing or unlisted origin gets no allow-origin header. There is no production domain in the code.
+
+`DATABASE_URL` is required. The process exits on startup if it is missing or not a Postgres URL, and the message does not include the value. With `MinConns` at 0 the pool connects on the first query. `PORT` defaults to `8080`.
 
 Backend checks, from `backend/`:
 
@@ -102,4 +120,6 @@ node --experimental-strip-types scripts/export-catalog.ts
 node --experimental-strip-types scripts/export-catalog.ts --check
 ```
 
-Integration tests compare the database with `backend/db/testdata/catalog_export.json`, which that script also writes. They skip when `TEST_DATABASE_URL` is unset, and fail in CI if it is unset. CI uses a disposable Postgres 17 container, the same major version Supabase currently defaults to. No hosted database is required for this step.
+Integration tests compare the database and the catalogue API with `backend/db/testdata/catalog_export.json`, which that script also writes. They skip when `TEST_DATABASE_URL` is unset, and fail in CI if it is unset. CI uses a disposable Postgres 17 container, the same major version Supabase currently defaults to. No hosted database is required for this step.
+
+The pool uses pgx simple protocol (`QueryExecModeSimpleProtocol`), so it does not prepare statements. That works with a direct Postgres connection and with Supabase's transaction-mode pooler. Prepared statements need a direct connection or Supabase session mode; this API does not use them. The pool allows at most 4 connections, keeps none idle at startup, closes idle connections after 5 minutes, and limits connection lifetime to 30 minutes. Catalogue queries time out after 3 seconds.
