@@ -6,7 +6,7 @@ Thoughtfully chosen. Beautifully lived.
 
 ## Structure
 
-- `frontend/` — React, TypeScript, and Vite. Brand tokens live in `frontend/src/index.css`. The storefront (`/`, `/shop`, `/collections/:slug`, `/products/:slug`) is a static catalogue with proposed display prices. It does not call the API. Unknown addresses render the not-found page in the client. A static host still returns HTTP 200 for those URLs; mapping them to a real 404 belongs to a later deployment and SEO phase.
+- `frontend/` — React, TypeScript, and Vite. Brand tokens live in `frontend/src/index.css`. The storefront (`/`, `/shop`, `/collections/:slug`, `/products/:slug`) renders the bundled catalogue immediately. When `VITE_API_BASE_URL` is set, it replaces that catalogue only if both list requests succeed. Unknown addresses render the not-found page in the client. A static host still returns HTTP 200 for those URLs; mapping them to a real 404 belongs to a later deployment and SEO phase.
 - `backend/` — Go API. Entry point `backend/cmd/api`. Routes live in `backend/internal/httpapi`. Migrations stay in `backend/cmd/migrate` and are not run by the API.
 - `.github/workflows/ci.yml` — frontend typecheck, lint, format, test, and build; backend gofmt, vet, and test against a disposable Postgres 17 service.
 
@@ -38,7 +38,7 @@ node -v
 
 ### Frontend
 
-The frontend does not call the API. From the repository root:
+From the repository root:
 
 ```bash
 cd frontend
@@ -47,6 +47,8 @@ npm run dev
 ```
 
 Vite prints the local URL. The default is `http://localhost:5173/`.
+
+Leave `VITE_API_BASE_URL` unset or blank to keep the bundled catalogue and make no catalogue requests. Set it to the API origin, such as `http://127.0.0.1:8080`, to load `GET /api/v1/collections` and `GET /api/v1/products` once per session. The storefront switches to that response only when both succeed and map onto the storefront types. If either request fails, or the JSON is the wrong shape, both lists stay on the bundle, so a collection list and a product list never come from different sources. Product pages still look up the slug in that one catalogue. Logo, hero, and the featured-slug order stay in the bundle, because the API does not serve them. An outage keeps the bundled pages. It does not show an error screen.
 
 Quality checks, still in `frontend/`:
 

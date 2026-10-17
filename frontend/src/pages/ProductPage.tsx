@@ -3,10 +3,11 @@ import { CatalogPlaceholder } from '../components/CatalogPlaceholder.tsx'
 import { Container } from '../components/Container.tsx'
 import { ProductCard } from '../components/ProductCard.tsx'
 import {
-  getCollection,
-  getProduct,
-  getRelatedProducts,
-} from '../data/catalog.ts'
+  findCollection,
+  findProduct,
+  relatedProducts,
+} from '../api/catalogSession.ts'
+import { useCatalog } from '../api/useCatalog.ts'
 import { focusRing } from '../lib/focusRing.ts'
 import { formatPrice } from '../lib/money.ts'
 import { useDocumentMeta } from '../lib/useDocumentMeta.ts'
@@ -14,8 +15,11 @@ import { NotFoundPage } from './NotFoundPage.tsx'
 
 export function ProductPage() {
   const { slug } = useParams()
-  const product = slug ? getProduct(slug) : undefined
-  const collection = product ? getCollection(product.collectionSlug) : undefined
+  const catalog = useCatalog()
+  const product = slug ? findProduct(catalog, slug) : undefined
+  const collection = product
+    ? findCollection(catalog, product.collectionSlug)
+    : undefined
 
   useDocumentMeta(
     product
@@ -29,7 +33,7 @@ export function ProductPage() {
     return <NotFoundPage />
   }
 
-  const related = getRelatedProducts(product.slug)
+  const related = relatedProducts(catalog, product.slug)
 
   return (
     <section className="py-16 sm:py-24">

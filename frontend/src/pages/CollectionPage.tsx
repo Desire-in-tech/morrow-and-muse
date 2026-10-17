@@ -1,13 +1,15 @@
 import { useParams } from 'react-router'
 import { Container } from '../components/Container.tsx'
 import { ProductCard } from '../components/ProductCard.tsx'
-import { getCollection, getProductsByCollection } from '../data/catalog.ts'
+import { findCollection, productsInCollection } from '../api/catalogSession.ts'
+import { useCatalog } from '../api/useCatalog.ts'
 import { useDocumentMeta } from '../lib/useDocumentMeta.ts'
 import { NotFoundPage } from './NotFoundPage.tsx'
 
 export function CollectionPage() {
   const { slug } = useParams()
-  const collection = slug ? getCollection(slug) : undefined
+  const catalog = useCatalog()
+  const collection = slug ? findCollection(catalog, slug) : undefined
 
   useDocumentMeta(
     collection?.seoTitle ?? 'Page Not Found | morrow & muse',
@@ -19,7 +21,7 @@ export function CollectionPage() {
     return <NotFoundPage />
   }
 
-  const items = getProductsByCollection(collection.slug)
+  const items = productsInCollection(catalog, collection.slug)
 
   return (
     <section className="py-16 sm:py-24">

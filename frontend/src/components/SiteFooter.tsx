@@ -1,18 +1,19 @@
 import { Link } from 'react-router'
-import { collections } from '../data/catalog.ts'
+import { useCatalog } from '../api/useCatalog.ts'
 import { focusRing } from '../lib/focusRing.ts'
 import { Container } from './Container.tsx'
 
-const footerLinks = [
-  { to: '/', label: 'Home' },
-  { to: '/shop', label: 'Shop' },
-  ...collections.map((collection) => ({
-    to: `/collections/${collection.slug}`,
-    label: collection.name,
-  })),
-]
-
 export function SiteFooter() {
+  const { collections } = useCatalog()
+  const footerLinks = [
+    { to: '/', label: 'Home' },
+    { to: '/shop', label: 'Shop' },
+    ...collections.map((collection) => ({
+      to: `/collections/${collection.slug}`,
+      label: collection.name,
+    })),
+  ]
+
   return (
     <footer className="border-t border-sage">
       <Container className="flex flex-col gap-8 py-10">

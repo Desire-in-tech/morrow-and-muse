@@ -4,7 +4,9 @@ import { CollectionCard } from '../components/CollectionCard.tsx'
 import { Container } from '../components/Container.tsx'
 import { ProductCard } from '../components/ProductCard.tsx'
 import { SectionHeading } from '../components/SectionHeading.tsx'
-import { collections, getFeaturedProducts, heroImage } from '../data/catalog.ts'
+import { featuredProducts } from '../api/catalogSession.ts'
+import { useCatalog } from '../api/useCatalog.ts'
+import { heroImage } from '../data/catalog.ts'
 import { focusRing } from '../lib/focusRing.ts'
 import { useDocumentMeta } from '../lib/useDocumentMeta.ts'
 
@@ -24,7 +26,8 @@ const values = [
 ]
 
 export function HomePage() {
-  const featured = getFeaturedProducts()
+  const catalog = useCatalog()
+  const featured = featuredProducts(catalog)
   useDocumentMeta(
     'morrow & muse | Thoughtfully Chosen. Beautifully Lived.',
     'Thoughtfully chosen home, stationery and everyday essentials for slower mornings, clearer spaces and everyday rituals.',
@@ -77,7 +80,7 @@ export function HomePage() {
             lede="From the first cup of the morning to the details that make a room feel like home, discover pieces chosen to bring more intention to everyday living."
           />
           <div className="mt-10 grid grid-cols-1 gap-10 sm:grid-cols-2">
-            {collections.map((collection) => (
+            {catalog.collections.map((collection) => (
               <CollectionCard key={collection.slug} collection={collection} />
             ))}
           </div>

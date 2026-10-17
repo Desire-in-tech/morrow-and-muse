@@ -1,9 +1,10 @@
 import { Container } from '../components/Container.tsx'
 import { ProductCard } from '../components/ProductCard.tsx'
-import { products } from '../data/catalog.ts'
+import { useCatalog } from '../api/useCatalog.ts'
 import { useDocumentMeta } from '../lib/useDocumentMeta.ts'
 
 export function ShopPage() {
+  const { products } = useCatalog()
   useDocumentMeta(
     'Shop All | morrow & muse',
     'Explore all 15 considered essentials from morrow & muse, from morning rituals and stationery to everyday carry and quiet home accents.',
