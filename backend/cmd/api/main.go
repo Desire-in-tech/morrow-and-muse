@@ -10,21 +10,40 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/Desire-in-tech/morrow-and-muse/backend/internal/catalog"
+	"github.com/Desire-in-tech/morrow-and-muse/backend/internal/config"
+	"github.com/Desire-in-tech/morrow-and-muse/backend/internal/dbpool"
 	"github.com/Desire-in-tech/morrow-and-muse/backend/internal/httpapi"
 )
 
 func main() {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	slog.SetDefault(logger)
+	os.Exit(run(logger))
+}
 
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
+func run(logger *slog.Logger) int {
+	cfg, err := config.Load()
+	if err != nil {
+		logger.Error("config", "err", err.Error())
+		return 1
 	}
 
+	pool, err := dbpool.New(cfg.DatabaseURL)
+	if err != nil {
+		logger.Error("database", "err", err.Error())
+		return 1
+	}
+	defer pool.Close()
+
 	server := &http.Server{
-		Addr:              ":" + port,
-		Handler:           httpapi.NewRouter(),
+		Addr: ":" + cfg.Port,
+		Handler: httpapi.NewRouter(httpapi.Options{
+			Catalog: catalog.NewPostgres(pool),
+			Ready:   pool,
+			Origins: cfg.CORSOrigins,
+			Logger:  logger,
+		}),
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       10 * time.Second,
 		WriteTimeout:      15 * time.Second,
@@ -36,7 +55,7 @@ func main() {
 
 	errCh := make(chan error, 1)
 	go func() {
-		logger.Info("listening", "addr", server.Addr)
+		logger.Info("listening", "addr", server.Addr, "cors_origins", len(cfg.CORSOrigins))
 		errCh <- server.ListenAndServe()
 	}()
 
@@ -44,7 +63,7 @@ func main() {
 	case err := <-errCh:
 		if err != nil && !errors.Is(err, http.ErrServerClosed) {
 			logger.Error("server stopped", "err", err)
-			os.Exit(1)
+			return 1
 		}
 	case <-ctx.Done():
 		logger.Info("shutdown requested")
@@ -52,7 +71,8 @@ func main() {
 		defer cancel()
 		if err := server.Shutdown(shutdownCtx); err != nil {
 			logger.Error("shutdown", "err", err)
-			os.Exit(1)
+			return 1
 		}
 	}
+	return 0
 }
