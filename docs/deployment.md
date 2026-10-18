@@ -165,6 +165,16 @@ To skip the prompt, one line in `~/.pgpass` (Windows: `%APPDATA%\postgresql\pgpa
 
 On macOS and Linux, `chmod 600` that file. Escape `:` and `\` in the password with a backslash. Delete the file when you are finished.
 
+### Migrate from GitHub Actions
+
+Use this when the computer you are on cannot open TCP port 5432 to Supabase. `.github/workflows/db-migrate.yml` is manual. It does not run on push or pull request.
+
+Add the secret once, in the repository: Settings → Secrets and variables → Actions → New repository secret. Name it `DATABASE_URL`. The value is the session-pooler URI, port 5432, with `?sslmode=require`. Do not use port 6543. If that password was pasted into a chat, a shell, or an issue, reset it in the Supabase dashboard first, then store the new URI in this secret and in Render.
+
+Run it from the Actions tab: Migrate database → Run workflow → branch `main` → type `migrate` in the confirm box. Type that word only. The run can show inputs, so the box is not the place for the connection string. The job rejects anything except that word, checks that the secret is a `postgres` or `postgresql` URL with a host, a user, a password, and `sslmode` of `require`, `verify-ca`, or `verify-full`, refuses port 6543, and runs `go run ./cmd/migrate up` in `backend/`. The URL is passed through the environment and is not printed. A green run means goose finished.
+
+Verify in the Supabase SQL editor, or with the `psql` `PG*` commands above, that `goose_db_version` has versions 0, 1, and 2 applied, and that the counts are 4 collections and 15 products.
+
 ## Vercel
 
 Create the project later, on the Hobby plan, from this Git repository. In Project Settings:
@@ -219,7 +229,7 @@ Credentials stay off. The storefront only sends `GET`. An allowed preflight retu
 ## Order of operations
 
 1. Create the Supabase Free project. Copy the session-pooler URI (port 5432) and add `sslmode=require`. Do not enable the IPv4 add-on.
-2. From a laptop, type the session-pooler URI at the hidden prompt in [Migrate from a laptop](#migrate-from-a-laptop), run `go run ./cmd/migrate up`, unset `DATABASE_URL`, then run the `psql` checks with the `PG*` variables.
+2. Apply the migrations. If the laptop cannot open TCP 5432, use [Migrate from GitHub Actions](#migrate-from-github-actions). Otherwise type the session-pooler URI at the hidden prompt in [Migrate from a laptop](#migrate-from-a-laptop), run `go run ./cmd/migrate up`, unset `DATABASE_URL`, then run the `psql` checks with the `PG*` variables.
 3. Create the Render free web service from `render.yaml` (or enter the same settings by hand). Set `DATABASE_URL` to that session URI. Set `CORS_ALLOWED_ORIGINS` to `http://localhost:5173`.
 4. Create the Vercel Hobby project with the settings in the table above. Set `VITE_API_BASE_URL` to the Render origin (`https://<service>.onrender.com`, no trailing slash) and deploy.
 5. Replace Render’s `CORS_ALLOWED_ORIGINS` with `https://<project>.vercel.app` (no trailing slash) and save so Render restarts.
