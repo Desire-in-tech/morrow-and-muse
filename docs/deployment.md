@@ -155,7 +155,7 @@ unset PGHOST PGPORT PGUSER PGDATABASE PGSSLMODE
 
 Copy `PGHOST` from the Connect dialog. `PGSSLMODE=require` is the minimum. `verify-full`, with `PGSSLROOTCERT` pointing at the root certificate from Database settings in the Supabase dashboard, also checks the server name ([SSL](https://supabase.com/docs/guides/database/connecting-to-postgres#connecting-with-ssl)). Do not use `disable`, `allow`, or `prefer`.
 
-`goose_db_version` has `id`, `version_id`, `is_applied`, and `tstamp`. goose inserts `version_id` 0 when it creates that table. This module then applies version 1 (schema) and version 2 (seed). Expect `0`, `1`, and `2`, each with `is_applied` true, plus 4 collections and 15 products. The queries contain no secrets.
+`goose_db_version` has `id`, `version_id`, `is_applied`, and `tstamp`. goose inserts `version_id` 0 when it creates that table. This module then applies version 1 (schema), version 2 (seed), and version 3 (public-schema lock-down). Expect `0`, `1`, `2`, and `3`, each with `is_applied` true, plus 4 collections and 15 products. Version 3 does not change those rows. The queries contain no secrets.
 
 To skip the prompt, one line in `~/.pgpass` (Windows: `%APPDATA%\postgresql\pgpass.conf`) is enough:
 
@@ -173,7 +173,19 @@ Add the secret once, in the repository: Settings → Secrets and variables → A
 
 Run it from the Actions tab: Migrate database → Run workflow → branch `main` → type `migrate` in the confirm box. Type that word only. The run can show inputs, so the box is not the place for the connection string. The job rejects anything except that word, checks that the secret is a `postgres` or `postgresql` URL with a host, a user, a password, and `sslmode` of `require`, `verify-ca`, or `verify-full`, refuses port 6543, and runs `go run ./cmd/migrate up` in `backend/`. The URL is passed through the environment and is not printed. A green run means goose finished.
 
-Verify in the Supabase SQL editor, or with the `psql` `PG*` commands above, that `goose_db_version` has versions 0, 1, and 2 applied, and that the counts are 4 collections and 15 products.
+Verify in the Supabase SQL editor, or with the `psql` `PG*` commands above, that `goose_db_version` has versions 0, 1, 2, and 3 applied, and that the counts are 4 collections and 15 products.
+
+### Public schema lock-down
+
+The storefront reads the catalogue through the Go API. Migration `00003_lock_down_public.sql` enables row level security on `collections`, `products`, `product_highlights`, `featured_products`, `catalog_assets`, and `goose_db_version`, and it creates no policies. `anon` and `authenticated` lose every privilege on those tables, on sequences in `public`, and on the trigger functions `set_updated_at`, `products_have_three_highlights`, and `product_highlights_stay_three`. `PUBLIC` loses `EXECUTE` on those functions.
+
+The API connects as the table owner (`postgres` on Supabase). Row level security is enabled without `FORCE ROW LEVEL SECURITY`, so the owner bypasses it and goose can still write `goose_db_version`. On Supabase, `postgres` also has `BYPASSRLS`. `service_role` is unchanged: it is server-only and already bypasses row level security.
+
+`supabase_admin` default privileges cannot be changed by the migration role. Objects this project creates are owned by `postgres`. Version 3 revokes that role's defaults that would grant new tables, sequences, and functions in `public` to `anon` and `authenticated`. It leaves the built-in `EXECUTE` grant to `PUBLIC` on functions created later, because a database-wide revoke would cover every schema. Each later migration that creates a table in `public` enables row level security, and each later migration that creates a function in `public` revokes `EXECUTE` from `PUBLIC`, `anon`, and `authenticated`. `TestSecurityHardening` fails if a migrated object in `public` skips that. A function created in `public` outside goose, for example from the Supabase SQL editor, stays executable by `PUBLIC` until it is revoked. `service_role` keeps its default grants.
+
+Running Down for version 3 turns row level security off and grants `anon` and `authenticated` access again. Leave that direction unused on the hosted database.
+
+A hosted database that already has versions 0, 1, and 2 picks up version 3 only when someone runs the [Migrate database](#migrate-from-github-actions) workflow after this change is on `main` (confirm input `migrate`). The workflow file is unchanged. After that run, the Supabase security advisor should clear `rls_disabled_in_public` for these six tables and `function_search_path_mutable` for the three trigger functions. This repository cannot rerun that advisor.
 
 ## Vercel
 
