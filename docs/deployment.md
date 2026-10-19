@@ -229,7 +229,7 @@ Credentials stay off. The storefront only sends `GET`. An allowed preflight retu
 ## Order of operations
 
 1. Create the Supabase Free project. Copy the session-pooler URI (port 5432) and add `sslmode=require`. Do not enable the IPv4 add-on.
-2. Apply the migrations. If the laptop cannot open TCP 5432, use [Migrate from GitHub Actions](#migrate-from-github-actions). Otherwise type the session-pooler URI at the hidden prompt in [Migrate from a laptop](#migrate-from-a-laptop), run `go run ./cmd/migrate up`, unset `DATABASE_URL`, then run the `psql` checks with the `PG*` variables.
+2. From `backend/`, run the goose migrations with `go run ./cmd/migrate up`. Enter `DATABASE_URL` at the hidden prompt in [Migrate from a laptop](#migrate-from-a-laptop), then unset it. Use the session pooler on port 5432 with `sslmode=require`, and check the tables as that section describes. When the laptop cannot open TCP 5432, use the [Migrate database](#migrate-from-github-actions) workflow instead (`workflow_dispatch`, confirm input `migrate`).
 3. Create the Render free web service from `render.yaml` (or enter the same settings by hand). Set `DATABASE_URL` to that session URI. Set `CORS_ALLOWED_ORIGINS` to `http://localhost:5173`.
 4. Create the Vercel Hobby project with the settings in the table above. Set `VITE_API_BASE_URL` to the Render origin (`https://<service>.onrender.com`, no trailing slash) and deploy.
 5. Replace Render’s `CORS_ALLOWED_ORIGINS` with `https://<project>.vercel.app` (no trailing slash) and save so Render restarts.
