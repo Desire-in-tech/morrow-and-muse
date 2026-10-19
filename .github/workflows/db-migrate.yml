@@ -1,0 +1,110 @@
+# Manual goose migrate. workflow_dispatch only.
+# DATABASE_URL is a repository secret. The steps pass it through env and never print it.
+name: Migrate database
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: Type migrate to apply goose migrations. Do not paste a connection string.
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: db-migrate
+  cancel-in-progress: false
+
+jobs:
+  migrate:
+    name: migrate
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Require confirmation
+        env:
+          CONFIRM: ${{ inputs.confirm }}
+        run: |
+          set -euo pipefail
+          if [ "${CONFIRM}" != "migrate" ]; then
+            echo "Refusing to migrate: the confirm input must be the word migrate."
+            exit 1
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: backend/go.mod
+          cache-dependency-path: backend/go.sum
+
+      - name: Validate DATABASE_URL
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          set -euo pipefail
+          dir=$(mktemp -d)
+          trap 'rm -rf "$dir"' EXIT
+          cat > "$dir/checkurl.go" <<'EOF'
+          package main
+          
+          import (
+          	"fmt"
+          	"net/url"
+          	"os"
+          )
+          
+          func main() {
+          	raw := os.Getenv("DATABASE_URL")
+          	if raw == "" {
+          		fmt.Fprintln(os.Stderr, "DATABASE_URL is empty")
+          		os.Exit(1)
+          	}
+          	u, err := url.Parse(raw)
+          	if err != nil || u.Hostname() == "" || (u.Scheme != "postgres" && u.Scheme != "postgresql") || u.User == nil || u.User.Username() == "" {
+          		fmt.Fprintln(os.Stderr, "DATABASE_URL is not a postgres URL with a host and a user")
+          		os.Exit(1)
+          	}
+          	password, ok := u.User.Password()
+          	if !ok || password == "" {
+          		fmt.Fprintln(os.Stderr, "DATABASE_URL has no password")
+          		os.Exit(1)
+          	}
+          	modes, exists := u.Query()["sslmode"]
+          	if !exists || len(modes) != 1 {
+          		fmt.Fprintln(os.Stderr, "DATABASE_URL must set sslmode once")
+          		os.Exit(1)
+          	}
+          	switch modes[0] {
+          	case "require", "verify-ca", "verify-full":
+          	default:
+          		fmt.Fprintln(os.Stderr, "DATABASE_URL sslmode must be require, verify-ca, or verify-full")
+          		os.Exit(1)
+          	}
+          	port := u.Port()
+          	if port == "" {
+          		port = "5432"
+          	}
+          	if port == "6543" {
+          		fmt.Fprintln(os.Stderr, "DATABASE_URL uses port 6543, the transaction pooler; goose needs session mode on 5432")
+          		os.Exit(1)
+          	}
+          	if port != "5432" {
+          		fmt.Fprintln(os.Stderr, "::warning::DATABASE_URL port is not 5432; use the session pooler")
+          	}
+          	fmt.Println("DATABASE_URL shape ok")
+          }
+          EOF
+          (cd "$dir" && go run ./checkurl.go)
+
+      - name: Migrate
+        working-directory: backend
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          set -euo pipefail
+          go run ./cmd/migrate up
