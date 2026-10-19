@@ -17,19 +17,29 @@
 -- level security, and Supabase already grants it full access. The path
 -- this closes is anon, authenticated, and PUBLIC.
 --
--- Default privileges are changed for the current role, which is the role
--- goose runs as. That is postgres on Supabase. CI and local Postgres use
--- a different role name, so the statements are not written FOR ROLE
+-- Default privileges are changed for the current role in schema public
+-- only. That role is postgres on Supabase. CI and local Postgres use a
+-- different role name, so the statements are not written FOR ROLE
 -- postgres. supabase_admin default privileges cannot be changed by this
--- role; objects this project creates are owned by the migration role.
--- A later migration that creates a table still has to enable row level
--- security itself. service_role keeps its default grants.
+-- role. Objects this project creates are owned by the migration role.
+-- service_role keeps its default grants.
 --
--- PostgreSQL merges schema default privileges onto the built-in function
--- default, and that built-in default includes EXECUTE for PUBLIC. Revoking
--- PUBLIC inside the schema does not remove it when the stored entry has
--- no PUBLIC grant. The database-wide revoke below does. Down grants that
--- built-in default back, which drops the row.
+-- Schema default privileges are added to the global default. The global
+-- default for functions includes EXECUTE for PUBLIC, and
+-- ALTER DEFAULT PRIVILEGES IN SCHEMA public REVOKE EXECUTE ON FUNCTIONS
+-- FROM PUBLIC does not remove it (verified on PostgreSQL 17: the
+-- pg_default_acl row is unchanged and a new function is still executable
+-- by PUBLIC). A database-wide REVOKE would remove that built-in grant
+-- for every future function this role creates in any schema, including
+-- extensions. This migration does not do that.
+--
+-- Each later migration that creates a function in public revokes EXECUTE
+-- on it from PUBLIC, anon, and authenticated. Each later migration that
+-- creates a table in public enables row level security. The public-schema
+-- guard in TestSecurityHardening fails CI when a migrated object in
+-- public skips that. A function created in public outside goose, for
+-- example from the Supabase SQL editor, stays executable by PUBLIC until
+-- someone revokes it.
 --
 -- On PostgreSQL 17, firing an existing trigger does not require the
 -- invoking role to hold EXECUTE on the trigger function. EXECUTE is still
@@ -104,9 +114,6 @@ begin
 end
 $lock$;
 -- +goose StatementEnd
-
-alter default privileges in schema public revoke execute on functions from public;
-alter default privileges revoke execute on functions from public;
 
 -- +goose StatementBegin
 create or replace function public.set_updated_at()
@@ -292,9 +299,3 @@ begin
 end
 $lock$;
 -- +goose StatementEnd
-
--- Inverse of the database-wide revoke in Up. When the result matches
--- PostgreSQL's built-in function default, the pg_default_acl row is
--- removed. Granting PUBLIC inside schema public would add an explicit
--- entry that was not there before Up.
-alter default privileges grant execute on functions to public;

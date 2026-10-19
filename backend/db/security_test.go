@@ -73,6 +73,9 @@ func TestSecurityHardening(t *testing.T) {
 	t.Run("locked_down", func(t *testing.T) {
 		assertLockedDown(t, ctx, scratch)
 	})
+	t.Run("public_schema_guard", func(t *testing.T) {
+		assertPublicSchemaGuard(t, ctx, scratch)
+	})
 	t.Run("anon_denied", func(t *testing.T) {
 		assertAnonDenied(t, ctx, scratch)
 	})
@@ -92,6 +95,7 @@ func TestSecurityHardening(t *testing.T) {
 		}
 		assertLockedDown(t, ctx, scratch)
 		assertAnonDenied(t, ctx, scratch)
+		assertPublicSchemaGuard(t, ctx, scratch)
 	})
 }
 
@@ -314,8 +318,6 @@ func assertLockedDown(t *testing.T, ctx context.Context, scratch *sql.DB) {
 		}
 	}
 
-	assertFutureFunctionDefaults(t, ctx, scratch)
-
 	var collections, products, highlights, featured, assets int
 	if err := scratch.QueryRowContext(ctx, `
 		select
@@ -429,31 +431,100 @@ func assertOwnerTriggers(t *testing.T, ctx context.Context, scratch *sql.DB) {
 	}
 }
 
-func assertFutureFunctionDefaults(t *testing.T, ctx context.Context, scratch *sql.DB) {
+// assertPublicSchemaGuard fails when a migration leaves a public object
+// open. PostgreSQL still grants EXECUTE to PUBLIC on a new function, and
+// a schema-level default-privilege revoke does not remove that grant, so
+// each migration has to revoke it itself. Extension members (pg_depend
+// deptype e) are excluded.
+func assertPublicSchemaGuard(t *testing.T, ctx context.Context, scratch *sql.DB) {
 	t.Helper()
-	tx, err := scratch.BeginTx(ctx, nil)
+
+	var functions int
+	if err := scratch.QueryRowContext(ctx, `
+		select count(*)
+		from pg_proc p
+		join pg_namespace n on n.oid = p.pronamespace
+		where n.nspname = 'public'
+		  and p.prokind in ('f', 'p')
+		  and not exists (
+		      select 1 from pg_depend d
+		      where d.classid = 'pg_proc'::regclass
+		        and d.objid = p.oid
+		        and d.deptype = 'e'
+		  )`).Scan(&functions); err != nil {
+		t.Fatalf("count public routines: %v", err)
+	}
+	if functions < 3 {
+		t.Fatalf("public routines = %d, want at least the three trigger functions", functions)
+	}
+
+	rows, err := scratch.QueryContext(ctx, `
+		select p.proname, roles.rolname
+		from pg_proc p
+		join pg_namespace n on n.oid = p.pronamespace
+		cross join (values ('public'), ('anon'), ('authenticated')) as roles(rolname)
+		where n.nspname = 'public'
+		  and p.prokind in ('f', 'p')
+		  and not exists (
+		      select 1 from pg_depend d
+		      where d.classid = 'pg_proc'::regclass
+		        and d.objid = p.oid
+		        and d.deptype = 'e'
+		  )
+		  and has_function_privilege(roles.rolname, p.oid, 'EXECUTE')
+		order by p.proname, roles.rolname`)
 	if err != nil {
-		t.Fatalf("begin function probe: %v", err)
+		t.Fatalf("function privileges: %v", err)
 	}
-	defer tx.Rollback()
-	if _, err := tx.ExecContext(ctx, "create function public.mm_sec_probe() returns integer language sql as 'select 1'"); err != nil {
-		t.Fatalf("create probe function: %v", err)
-	}
-	for _, role := range []string{"public", "anon", "authenticated"} {
-		var allowed bool
-		if err := tx.QueryRowContext(ctx, "select has_function_privilege($1, 'public.mm_sec_probe()', 'EXECUTE')", role).Scan(&allowed); err != nil {
-			t.Fatalf("future execute %s: %v", role, err)
+	defer rows.Close()
+	for rows.Next() {
+		var name, role string
+		if err := rows.Scan(&name, &role); err != nil {
+			t.Fatalf("scan function privilege: %v", err)
 		}
-		if allowed {
-			t.Errorf("future function is executable by %s", role)
+		t.Errorf("public.%s is executable by %s", name, role)
+	}
+	if err := rows.Err(); err != nil {
+		t.Fatalf("function privilege rows: %v", err)
+	}
+
+	aclRows, err := scratch.QueryContext(ctx, `
+		select case c.relkind when 'r' then 'table' else 'sequence' end,
+		       c.relname, coalesce(g.rolname, 'public'), a.privilege_type
+		from pg_class c
+		join pg_namespace n on n.oid = c.relnamespace
+		join lateral aclexplode(c.relacl) a on true
+		left join pg_roles g on g.oid = a.grantee
+		where n.nspname = 'public'
+		  and c.relkind in ('r', 'S')
+		  and coalesce(g.rolname, 'public') in ('anon', 'authenticated', 'public')
+		order by 1, 2, 3, 4`)
+	if err != nil {
+		t.Fatalf("relation privileges: %v", err)
+	}
+	defer aclRows.Close()
+	for aclRows.Next() {
+		var kind, name, role, priv string
+		if err := aclRows.Scan(&kind, &name, &role, &priv); err != nil {
+			t.Fatalf("scan relation privilege: %v", err)
 		}
+		t.Errorf("%s public.%s grants %s to %s", kind, name, priv, role)
 	}
-	var serviceAllowed bool
-	if err := tx.QueryRowContext(ctx, "select has_function_privilege('service_role', 'public.mm_sec_probe()', 'EXECUTE')").Scan(&serviceAllowed); err != nil {
-		t.Fatalf("future execute service_role: %v", err)
+	if err := aclRows.Err(); err != nil {
+		t.Fatalf("relation privilege rows: %v", err)
 	}
-	if !serviceAllowed {
-		t.Error("future function lost EXECUTE for service_role")
+
+	var closed, open int
+	if err := scratch.QueryRowContext(ctx, `
+		select count(*) filter (where c.relrowsecurity),
+		       count(*) filter (where not c.relrowsecurity)
+		from pg_class c
+		join pg_namespace n on n.oid = c.relnamespace
+		where n.nspname = 'public' and c.relkind = 'r'`).Scan(&closed, &open); err != nil {
+		t.Fatalf("row security: %v", err)
+	}
+	if open != 0 || closed < len(catalogueTables()) {
+		t.Fatalf("public tables with row security = %d, without = %d", closed, open)
 	}
 }
 
@@ -528,41 +599,52 @@ func privilegeSnapshot(t *testing.T, ctx context.Context, scratch *sql.DB) strin
 		}
 	}
 
+	// ACL text order is not compared. GRANT after REVOKE appends aclitems,
+	// so relacl::text can list service_role before anon even when the
+	// grantee, grantor, privilege, and grant option are unchanged.
 	appendQuery(`
 		select 'table', c.relname, c.relrowsecurity::text, c.relforcerowsecurity::text,
-		       coalesce(g.rolname, 'public'), a.privilege_type,
-		       a.is_grantable::text
+		       coalesce(grantee.rolname, 'public'), coalesce(grantor.rolname, ''),
+		       a.privilege_type, a.is_grantable::text
 		from pg_class c
 		join pg_namespace n on n.oid = c.relnamespace
 		left join lateral aclexplode(c.relacl) a on true
-		left join pg_roles g on g.oid = a.grantee
+		left join pg_roles grantee on grantee.oid = a.grantee
+		left join pg_roles grantor on grantor.oid = a.grantor
 		where n.nspname = 'public' and c.relkind = 'r'`)
 	appendQuery(`
-		select 'sequence', c.relname, coalesce(g.rolname, 'public'), a.privilege_type, a.is_grantable::text
+		select 'sequence', c.relname, coalesce(grantee.rolname, 'public'),
+		       coalesce(grantor.rolname, ''), a.privilege_type, a.is_grantable::text
 		from pg_class c
 		join pg_namespace n on n.oid = c.relnamespace
 		left join lateral aclexplode(c.relacl) a on true
-		left join pg_roles g on g.oid = a.grantee
+		left join pg_roles grantee on grantee.oid = a.grantee
+		left join pg_roles grantor on grantor.oid = a.grantor
 		where n.nspname = 'public' and c.relkind = 'S'`)
 	appendQuery(`
-		select 'function', p.proname, coalesce(array_to_string(p.proconfig, ','), ''), p.prosrc
+		select 'function', p.proname, coalesce(array_to_string(p.proconfig, ','), ''),
+		       pg_get_functiondef(p.oid)
 		from pg_proc p
 		join pg_namespace n on n.oid = p.pronamespace
 		where n.nspname = 'public'`)
 	appendQuery(`
-		select 'function-acl', p.proname, coalesce(g.rolname, 'public'), a.privilege_type, a.is_grantable::text
+		select 'function-acl', p.proname, coalesce(grantee.rolname, 'public'),
+		       coalesce(grantor.rolname, ''), a.privilege_type, a.is_grantable::text
 		from pg_proc p
 		join pg_namespace n on n.oid = p.pronamespace
 		left join lateral aclexplode(p.proacl) a on true
-		left join pg_roles g on g.oid = a.grantee
+		left join pg_roles grantee on grantee.oid = a.grantee
+		left join pg_roles grantor on grantor.oid = a.grantor
 		where n.nspname = 'public'`)
 	appendQuery(`
 		select 'default', coalesce(n.nspname, 'global'), d.defaclobjtype,
-		       coalesce(g.rolname, 'public'), a.privilege_type, a.is_grantable::text
+		       coalesce(grantee.rolname, 'public'), coalesce(grantor.rolname, ''),
+		       a.privilege_type, a.is_grantable::text
 		from pg_default_acl d
 		left join pg_namespace n on n.oid = d.defaclnamespace
 		left join lateral aclexplode(d.defaclacl) a on true
-		left join pg_roles g on g.oid = a.grantee
+		left join pg_roles grantee on grantee.oid = a.grantee
+		left join pg_roles grantor on grantor.oid = a.grantor
 		where d.defaclrole = (select oid from pg_roles where rolname = current_user)`)
 	appendQuery(`
 		select 'schema', coalesce(nspacl::text, '')
