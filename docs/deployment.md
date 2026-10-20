@@ -1,12 +1,25 @@
 # Deployment readiness
 
-This is a configuration review for a non-commercial portfolio demo of Morrow & Muse. The budget is $0. The intended hosts, when someone later creates them, are:
+This is a configuration review for a non-commercial portfolio demo of Morrow & Muse. The budget is $0. The hosts in use are:
 
 - Supabase Free for Postgres
-- Render Free for the Go API
-- Vercel Hobby for the storefront
+- Render Free for the Go API, at <https://morrow-and-muse-api.onrender.com>
+- Vercel Hobby for the storefront, at <https://morrow-and-muse.vercel.app>
 
-Nothing in this repository creates those accounts, projects, or services, and nothing here deploys. Do not add a payment method. Do not enable paid add-ons, including Supabase’s IPv4 add-on. Do not commit a database password, a connection string, or a live hostname.
+Nothing in this repository creates those accounts, projects, or services, and nothing here deploys. The services above already exist. The tables and the [order of operations](#order-of-operations) below are how to reproduce that setup. Do not add a payment method. Do not enable paid add-ons, including Supabase’s IPv4 add-on. Do not commit a database password, a connection string, or a Supabase host copied from the Connect dialog.
+
+## Current deployed configuration
+
+These are the public origins and the files in git. Dashboard screens were not opened for this note. Requests from 19 October 2026 are in [Checks after hosting exists](#checks-after-hosting-exists). There is no uptime guarantee.
+
+| Piece | Deployed configuration |
+| --- | --- |
+| Storefront | `https://morrow-and-muse.vercel.app` |
+| API | `https://morrow-and-muse-api.onrender.com` |
+| Storefront config in git | [`frontend/vercel.json`](../frontend/vercel.json) rewrites to `/index.html` |
+| API config in git | [`render.yaml`](../render.yaml): free Go web service `morrow-and-muse-api`, branch `main`, root `backend`, health check `/health` |
+| API origin the storefront calls | `https://morrow-and-muse-api.onrender.com`, inlined at build time from `VITE_API_BASE_URL`. It is not written in `vercel.json` or in source. |
+| CORS | A preflight from `https://morrow-and-muse.vercel.app` was allowed. The rest of the Render allowlist was not read. |
 
 ## What is already true in the code
 
@@ -26,7 +39,7 @@ CORS is an exact allowlist (`CORS_ALLOWED_ORIGINS`), comma-separated. There is n
 
 ## Render
 
-A `render.yaml` blueprint is in the repository root because it records the free plan, the monorepo root, the build and start commands, the health check, and the secret names without values. Prose alone would leave `plan: free` as a click that is easy to miss. Syncing the blueprint in the Render dashboard is what creates the service. Do not sync it until this file is on `main` and you intend to create that free service.
+A `render.yaml` blueprint is in the repository root because it records the free plan, the monorepo root, the build and start commands, the health check, and the secret names without values. Prose alone would leave `plan: free` as a click that is easy to miss. Syncing the blueprint in the Render dashboard is what creates or updates the service. The service `morrow-and-muse-api` already exists. This file does not sync itself and does not deploy. Sync the blueprint only when you intend to create or update that free service from `main`.
 
 | Setting | Value |
 | --- | --- |
@@ -56,7 +69,7 @@ Enter these in the Render dashboard (the blueprint prompts for them). Do not put
 | Variable | Where | Value |
 | --- | --- | --- |
 | `DATABASE_URL` | Render → service → Environment | Session-pooler URI from Supabase, with `sslmode=require`. See below. |
-| `CORS_ALLOWED_ORIGINS` | Render → service → Environment | First, `http://localhost:5173`. After Vercel has a production URL, replace it with that origin and save so Render restarts the service. |
+| `CORS_ALLOWED_ORIGINS` | Render → service → Environment | Exact origins, no trailing slash. The deployed storefront origin is `https://morrow-and-muse.vercel.app`. For a new setup, start with `http://localhost:5173`, then replace it with the production origin and save so Render restarts the service. The rest of the dashboard value was not read. |
 | `PORT` | Injected by Render | Do not set it. |
 
 ## Supabase
@@ -99,7 +112,11 @@ go run ./cmd/migrate up
 unset DATABASE_URL
 ```
 
-Paste the session-pooler URI at the hidden prompt: port `5432` and `sslmode=require`. The paste is not a shell command, so it is not written to history. `export` and `go run` do not receive the URL as an argument. `unset` removes it from this shell. The same sequence with `go run ./cmd/migrate down-to 0` drops the catalogue objects. Do not run that against a database you mean to keep.
+Paste the session-pooler URI at the hidden prompt: port `5432` and `sslmode=require`. The paste is not a shell command, so it is not written to history. `export` and `go run` do not receive the URL as an argument. `unset` removes it from this shell. Run this from `backend/`, where `go.mod` and `cmd/migrate` live. CI and the Migrate database workflow use that same working directory, and the workflow runs `up` only.
+
+`go run ./cmd/migrate down-to 0` is not `up`. After a full `up`, goose runs the Down sections of `00003`, then `00002`, then `00001`, and stops at version 0. Version 2 deletes the catalogue rows. Version 1 drops `featured_products`, `product_highlights`, `products`, `collections`, and `catalog_assets`, their triggers, and the three trigger functions. `goose_db_version` remains. Use that only on a disposable local database. Never run it against the hosted database to experiment.
+
+`go run ./cmd/migrate down-to 2` rolls back only version 3. The tables and the seed stay. The Down section of `00003_lock_down_public.sql` disables row level security on the six tables; where `anon` and `authenticated` exist, grants them `ALL` on those tables, `ALL` on sequences in `public`, and `EXECUTE` on the three trigger functions, and restores their schema-public default privileges; grants `EXECUTE` on those functions to `PUBLIC`; and replaces the functions with the version-1 bodies (`search_path` reset). It does not grant table or sequence privileges back to `PUBLIC`. That direction is also only for a disposable local database.
 
 The bash sequence above was run against a disposable local Postgres (migrate exited 0, then `unset` cleared the variable). Zsh was not installed in that environment; the zsh flags are from the manual linked above.
 
@@ -171,7 +188,7 @@ Use this when the computer you are on cannot open TCP port 5432 to Supabase. `.g
 
 Add the secret once, in the repository: Settings → Secrets and variables → Actions → New repository secret. Name it `DATABASE_URL`. The value is the session-pooler URI, port 5432, with `?sslmode=require`. Do not use port 6543. If that password was pasted into a chat, a shell, or an issue, reset it in the Supabase dashboard first, then store the new URI in this secret and in Render.
 
-Run it from the Actions tab: Migrate database → Run workflow → branch `main` → type `migrate` in the confirm box. Type that word only. The run can show inputs, so the box is not the place for the connection string. The job rejects anything except that word, checks that the secret is a `postgres` or `postgresql` URL with a host, a user, a password, and `sslmode` of `require`, `verify-ca`, or `verify-full`, refuses port 6543, and runs `go run ./cmd/migrate up` in `backend/`. The URL is passed through the environment and is not printed. A green run means goose finished.
+Run it from the Actions tab: Migrate database → Run workflow → branch `main` → type `migrate` in the confirm box. Type that word only. The run can show inputs, so the box is not the place for the connection string. The job rejects anything except that word, checks that the secret is a `postgres` or `postgresql` URL with a host, a user, a password, and `sslmode` of `require`, `verify-ca`, or `verify-full`, refuses port 6543, warns if the port is not 5432, and runs `go run ./cmd/migrate up` in `backend/`. The URL is passed through the environment and is not printed. A green run means goose finished.
 
 Verify in the Supabase SQL editor, or with the `psql` `PG*` commands above, that `goose_db_version` has versions 0, 1, 2, and 3 applied, and that the counts are 4 collections and 15 products.
 
@@ -183,13 +200,29 @@ The API connects as the table owner (`postgres` on Supabase). Row level security
 
 `supabase_admin` default privileges cannot be changed by the migration role. Objects this project creates are owned by `postgres`. Version 3 revokes that role's defaults that would grant new tables, sequences, and functions in `public` to `anon` and `authenticated`. It leaves the built-in `EXECUTE` grant to `PUBLIC` on functions created later, because a database-wide revoke would cover every schema. Each later migration that creates a table in `public` enables row level security, and each later migration that creates a function in `public` revokes `EXECUTE` from `PUBLIC`, `anon`, and `authenticated`. `TestSecurityHardening` fails if a migrated object in `public` skips that. A function created in `public` outside goose, for example from the Supabase SQL editor, stays executable by `PUBLIC` until it is revoked. `service_role` keeps its default grants.
 
-Running Down for version 3 turns row level security off and grants `anon` and `authenticated` access again. Leave that direction unused on the hosted database.
+Running Down for version 3 does what [Migrate from a laptop](#migrate-from-a-laptop) describes for `down-to 2`. Leave that direction unused on the hosted database.
 
-A hosted database that already has versions 0, 1, and 2 picks up version 3 only when someone runs the [Migrate database](#migrate-from-github-actions) workflow after this change is on `main` (confirm input `migrate`). The workflow file is unchanged. After that run, the Supabase security advisor should clear `rls_disabled_in_public` for these six tables and `function_search_path_mutable` for the three trigger functions. This repository cannot rerun that advisor.
+Version 3 is on `main`. A hosted database that already has versions 0, 1, and 2 picks it up only when someone runs the [Migrate database](#migrate-from-github-actions) workflow (confirm input `migrate`). The workflow file runs `up` only. After that run, the Supabase security advisor should clear `rls_disabled_in_public` for these six tables and `function_search_path_mutable` for the three trigger functions. This repository cannot rerun that advisor. Catalogue responses show the schema and the seed. They do not show privileges.
+
+A project-run read-only check through the Supabase management connection on 19 October 2026 is a historical record, not a result of this review, and not an independent audit. This review did not re-query the database. That check reported goose versions 0, 1, 2, and 3 applied, with version 3 at 18:04:47 EAT (15:04:47 UTC); row counts of 4 collections, 15 products, 45 product highlights, 4 featured products, and 2 catalogue assets; all 36 Cloudinary URLs matching `frontend/src/data/catalog.ts`; row level security enabled and not forced on the six tables, with no policies; `PUBLIC`, `anon`, and `authenticated` revoked on the tables, sequences, and the three trigger functions; those functions having `search_path` set to empty. The advisors then showed `rls_enabled_no_policy` (INFO, expected) and `unused_index`. The live API was not part of that check. The HTTP checks from the same date are in [Checks after hosting exists](#checks-after-hosting-exists).
+
+GitHub Actions records a separate fact: the Migrate database workflow, `workflow_dispatch` on commit `135578461356cbf1d4940dd8e36a1300ed6cf849`, finished successfully at 15:04:51 UTC on 19 October 2026. That job runs `up` and does not print the database host. It is not a copy of the SQL result above.
+
+Limits that check did not remove, and that the migration does not remove: `anon` still has `USAGE` on schema `public`; `supabase_admin` default privileges are unchanged; a function created by hand in the SQL editor is executable by `PUBLIC` until it is revoked.
+
+### Separate read-only login (not built)
+
+The API uses one `DATABASE_URL` and connects as the owner. Supabase’s connection guide says a custom role through the shared pooler uses the username `[ROLE].[PROJECT-REF]`. Creating that role is SQL, not a paid add-on named on that page. This review did not create one.
+
+A non-owner role does not bypass row level security unless it has `BYPASSRLS`. With row level security enabled and no policy, that role sees no rows even if it holds `SELECT`. Assigning `BYPASSRLS` was not tested here. The design that matches the current policies (there are none) is a `SELECT` policy, not that attribute.
+
+The catalogue queries select from `collections`, `products`, and `product_highlights` only (`backend/internal/catalog/postgres.go`). They do not read `featured_products`, `catalog_assets`, or `goose_db_version`. `/ready` pings the pool. It does not need a table grant.
+
+A later change would be a new goose migration that creates the login, grants `USAGE` on `public` and `SELECT` on those three tables, and adds a `SELECT` policy on each; tests that the role can read those tables and cannot write or read the others; a Render `DATABASE_URL` whose user is `[ROLE].[PROJECT-REF]`, session pooler, port 5432, `sslmode=require`; and the existing migrate secret left on the owner. Do not point goose at the reader role. Do not do that work by editing the hosted database outside a migration.
 
 ## Vercel
 
-Create the project later, on the Hobby plan, from this Git repository. In Project Settings:
+The Hobby project is already served at `https://morrow-and-muse.vercel.app`. To reproduce it from this Git repository, create the project on the Hobby plan. In Project Settings:
 
 | Setting | Value |
 | --- | --- |
@@ -216,13 +249,13 @@ A Framework Preset of Other can stop this rewrite from taking effect ([Why is my
 
 Unknown client routes also receive `index.html` with HTTP 200. The not-found page is still rendered in the browser. A real HTTP 404 for unknown URLs is unchanged and is a later SEO concern.
 
-Do not set a custom domain in this phase. Do not put a Render hostname in `vercel.json` or in source.
+Do not set a custom domain in this phase. Do not put a Render hostname in `vercel.json` or in source. The production bundle inlines `VITE_API_BASE_URL`, so the public API origin is present in the built JavaScript. On 19 October 2026 that bundle contained the string `morrow-and-muse-api.onrender.com`. The asset filename changes with each build.
 
 ### `VITE_API_BASE_URL`
 
 Add it under Vercel → Project → Settings → Environment Variables, for the Production environment, before the production build:
 
-`VITE_API_BASE_URL` = the Render origin Render assigns, `https://YOUR-SERVICE.onrender.com`
+`VITE_API_BASE_URL` = `https://morrow-and-muse-api.onrender.com`
 
 No trailing slash. The client strips trailing slashes, but the value is still baked into the bundle. Changing it requires a new Vercel deployment. If the variable is absent or blank, the storefront never calls the API and serves the bundled catalogue.
 
@@ -230,7 +263,7 @@ Preview deployments are a different origin from production. Leave the variable u
 
 ## CORS
 
-After Vercel shows a production URL, set Render’s `CORS_ALLOWED_ORIGINS` to that origin and save so the service restarts.
+The production origin is `https://morrow-and-muse.vercel.app`. Set Render’s `CORS_ALLOWED_ORIGINS` to that origin and save so the service restarts. On 19 October 2026 a preflight from that origin returned 204 and echoed it.
 
 Exact format: `https://<project>.vercel.app`
 
@@ -240,6 +273,8 @@ Credentials stay off. The storefront only sends `GET`. An allowed preflight retu
 
 ## Order of operations
 
+The demo at the two origins above already exists. These steps are how to reproduce that setup.
+
 1. Create the Supabase Free project. Copy the session-pooler URI (port 5432) and add `sslmode=require`. Do not enable the IPv4 add-on.
 2. From `backend/`, run the goose migrations with `go run ./cmd/migrate up`. Enter `DATABASE_URL` at the hidden prompt in [Migrate from a laptop](#migrate-from-a-laptop), then unset it. Use the session pooler on port 5432 with `sslmode=require`, and check the tables as that section describes. When the laptop cannot open TCP 5432, use the [Migrate database](#migrate-from-github-actions) workflow instead (`workflow_dispatch`, confirm input `migrate`).
 3. Create the Render free web service from `render.yaml` (or enter the same settings by hand). Set `DATABASE_URL` to that session URI. Set `CORS_ALLOWED_ORIGINS` to `http://localhost:5173`.
@@ -248,23 +283,46 @@ Credentials stay off. The storefront only sends `GET`. An allowed preflight retu
 
 ## Checks after hosting exists
 
-These were not run. There is no hosted service.
+Run on 19 October 2026 against the deployed hosts. These are single requests from that day, not an uptime or production-readiness result.
 
 ```bash
-curl -sS "https://YOUR-SERVICE.onrender.com/health"
-curl -sS "https://YOUR-SERVICE.onrender.com/ready"
-curl -sS "https://YOUR-SERVICE.onrender.com/api/v1/collections"
-curl -sS "https://YOUR-SERVICE.onrender.com/api/v1/products"
-curl -sS "https://YOUR-SERVICE.onrender.com/api/v1/products/everyday-ceramic-mug"
+curl -sS -o /dev/null -w '%{http_code}\n' "https://morrow-and-muse.vercel.app/"
+curl -sS -o /dev/null -w '%{http_code}\n' "https://morrow-and-muse.vercel.app/shop"
+curl -sS -o /dev/null -w '%{http_code}\n' "https://morrow-and-muse.vercel.app/products/everyday-ceramic-mug"
+curl -sS -o /dev/null -w '%{http_code}\n' "https://morrow-and-muse.vercel.app/this-route-does-not-exist"
+curl -sS "https://morrow-and-muse-api.onrender.com/health"
+curl -sS "https://morrow-and-muse-api.onrender.com/ready"
+curl -sS "https://morrow-and-muse-api.onrender.com/api/v1/collections"
+curl -sS "https://morrow-and-muse-api.onrender.com/api/v1/products"
+curl -sS "https://morrow-and-muse-api.onrender.com/api/v1/products/everyday-ceramic-mug"
 curl -sS -D - -o /dev/null -X OPTIONS \
-  "https://YOUR-SERVICE.onrender.com/api/v1/collections" \
-  -H "Origin: https://YOUR-PROJECT.vercel.app" \
+  "https://morrow-and-muse-api.onrender.com/api/v1/collections" \
+  -H "Origin: https://morrow-and-muse.vercel.app" \
   -H "Access-Control-Request-Method: GET"
 ```
 
-Expect `{"status":"ok"}`, then `{"status":"ready"}` when Supabase is awake. The catalogue routes return `{"data": ...}`. The preflight should be 204 and should echo the `Origin` header. Then open `https://YOUR-PROJECT.vercel.app/shop`, a collection URL, and a product URL directly, including a refresh.
+That day:
 
-A free Render service that has been idle will show Render’s loading page for about a minute on the first request. Wait and retry `/health` before treating that as an application failure.
+- The storefront returned HTTP 200 for `/`, `/shop`, `/products/everyday-ceramic-mug`, and `/this-route-does-not-exist`. The unknown path is the SPA rewrite. The client still renders the not-found page. A collection path was not requested in this pass.
+- `/health` returned HTTP 200 `{"status":"ok"}`. The free service had been idle, and that first request took about 12 seconds.
+- `/ready` returned HTTP 200 `{"status":"ready"}`.
+- `/api/v1/collections` returned HTTP 200 and 4 collections. `sortOrder` was 1 `morning-ritual`, 2 `workday-edit`, 3 `everyday-carry`, 4 `quiet-space`.
+- `/api/v1/products` returned HTTP 200 and 15 products. Each product had 3 highlights. `everyday-ceramic-mug` had `priceCents` 2800.
+- `/api/v1/products/everyday-ceramic-mug` returned HTTP 200.
+- `/api/v1/products/Bad_Slug` returned HTTP 400 `{"error":{"code":"bad_request","message":"Slug is invalid."}}`.
+- `/api/v1/products/not-a-real-product` returned HTTP 404 `{"error":{"code":"not_found","message":"Product not found."}}`.
+- `POST /api/v1/products` returned HTTP 405 `{"error":{"code":"method_not_allowed","message":"Method not allowed."}}`.
+- The allowed preflight returned HTTP 204, `access-control-allow-origin: https://morrow-and-muse.vercel.app`, methods `GET, OPTIONS`, headers `Accept, Content-Type`, and `access-control-max-age: 600`.
+
+A free Render service that has been idle can show Render’s loading page for about a minute on the first request. The wake observed above was about 12 seconds. That is one sample, not a limit. Wait and retry `/health` before treating a slow first response as an application failure.
+
+## Public deploy records
+
+Checked on 20 October 2026 from GitHub’s API and from public HTTP. No dashboard was opened. No build log was read. No hosted SQL was run.
+
+`main` is `135578461356cbf1d4940dd8e36a1300ed6cf849`. GitHub deployments for the environment `main - morrow-and-muse-api`, with environment URL `https://morrow-and-muse-api.onrender.com`, record a successful deploy of that commit at 20:40:43 UTC on 19 October 2026. The same commit also has a success at 15:56:53 UTC and a failure at 20:30:08 UTC. The Vercel commit status on that commit is success, “Deployment has completed”, updated at 20:12:02 UTC. The deployments list has no Vercel deployment object.
+
+On 20 October 2026, `GET /health` and `GET /ready` returned `{"status":"ok"}` and `{"status":"ready"}`. Neither body includes a commit or a Go version. The API response identified Render behind Cloudflare. The storefront response identified Vercel. The HTML did not contain the commit. Its script URL was `/assets/index-BhBuGD7D.js`, and that file contained `morrow-and-muse-api.onrender.com`. The filename is build output, not a version pin. The Go toolchain on Render’s builder remains unverified.
 
 ## Free-tier limits
 
@@ -276,9 +334,10 @@ Citations are the pages fetched for this review. Numbers that those pages do not
 
 **Vercel Hobby** ([Hobby plan](https://vercel.com/docs/plans/hobby), [Terms of Service §4](https://vercel.com/legal/terms)). The Hobby plan is free and, in Vercel’s terms, only for personal or non-commercial use. The fair-use note on the Hobby page says the same. This storefront is a fictional boutique with no checkout. Do not use the deployment for payments, ads, or client work. Vercel can change Hobby limits or shut a Hobby project down. Exceeding included Hobby usage generally waits out the usage window rather than billing a card; do not add one.
 
-## Unverified until a real deploy
+## Still unverified
 
-- That Render’s current native Go is already 1.27.x, or that `GOTOOLCHAIN=auto` successfully downloads 1.27.2 on that builder.
-- That a Render free instance is IPv4-only. The session pooler is the choice that stays valid either way, without the paid IPv4 add-on.
-- That the Supabase session URI, the Render health check, and the Vercel rewrite behave as documented once the accounts exist.
-- The exact Vercel production hostname. It is assigned by Vercel at project creation.
+- Whether Render’s current native Go is already 1.27.x, or that `GOTOOLCHAIN=auto` successfully downloads 1.27.2 on that builder. No build log was read. A successful GitHub deployment of commit `1355784` does not show the toolchain. `/health` does not report it. Do not set `GO_VERSION`.
+- Whether a Render free instance is IPv4-only. The session pooler is the choice that stays valid either way, without the paid IPv4 add-on.
+- The Supabase session URI and the pooler host index. They were not copied into this review.
+- The hosted privilege state after 19 October 2026. The project-run check from that date is the historical record above. This review did not re-query the database. `/ready` only shows that the owner ping succeeded. That check was not an independent security audit.
+- The Vercel and Render dashboard screens (framework preset, Node version, plan, and Render’s health-check setting). `/health` answering is what the API does. It does not by itself show the dashboard health-check path. The storefront responses match the rewrite in `frontend/vercel.json`. The settings tables are the configuration this guide records.
