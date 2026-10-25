@@ -6,6 +6,21 @@ A design-led editorial storefront for a fictional boutique. Thoughtfully chosen 
 
 **Live demo.** [Storefront](https://morrow-and-muse.vercel.app) · [API](https://morrow-and-muse-api.onrender.com)
 
+## Storefront screenshots
+
+A quick visual preview of the morrow & muse frontend. Select any screenshot to view the full-size image.
+
+<p align="center">
+  <a href="https://res.cloudinary.com/f7ko7ayw/image/upload/v1792956648/Screenshot_2026-10-25_222650_vf9wp7.png"><img src="https://res.cloudinary.com/f7ko7ayw/image/upload/v1792956648/Screenshot_2026-10-25_222650_vf9wp7.png" alt="morrow & muse storefront screenshot 1" width="32%" /></a>
+  <a href="https://res.cloudinary.com/f7ko7ayw/image/upload/v1792956663/Screenshot_2026-10-25_222807_zntocq.png"><img src="https://res.cloudinary.com/f7ko7ayw/image/upload/v1792956663/Screenshot_2026-10-25_222807_zntocq.png" alt="morrow & muse storefront screenshot 2" width="32%" /></a>
+  <a href="https://res.cloudinary.com/f7ko7ayw/image/upload/v1792956675/Screenshot_2026-10-25_222833_b5yrsg.png"><img src="https://res.cloudinary.com/f7ko7ayw/image/upload/v1792956675/Screenshot_2026-10-25_222833_b5yrsg.png" alt="morrow & muse storefront screenshot 3" width="32%" /></a>
+</p>
+<p align="center">
+  <a href="https://res.cloudinary.com/f7ko7ayw/image/upload/v1792956689/Screenshot_2026-10-25_222851_dfdkku.png"><img src="https://res.cloudinary.com/f7ko7ayw/image/upload/v1792956689/Screenshot_2026-10-25_222851_dfdkku.png" alt="morrow & muse storefront screenshot 4" width="32%" /></a>
+  <a href="https://res.cloudinary.com/f7ko7ayw/image/upload/v1792956704/Screenshot_2026-10-25_222911_ejae2y.png"><img src="https://res.cloudinary.com/f7ko7ayw/image/upload/v1792956704/Screenshot_2026-10-25_222911_ejae2y.png" alt="morrow & muse storefront screenshot 5" width="32%" /></a>
+  <a href="https://res.cloudinary.com/f7ko7ayw/image/upload/v1792956717/Screenshot_2026-10-25_222933_w69m2h.png"><img src="https://res.cloudinary.com/f7ko7ayw/image/upload/v1792956717/Screenshot_2026-10-25_222933_w69m2h.png" alt="morrow & muse storefront screenshot 6" width="32%" /></a>
+</p>
+
 **Current status.** The storefront and the read-only catalogue API are deployed. On 19 October 2026 both answered: the shop returned HTTP 200, and the API returned HTTP 200 for `/health`, `/ready`, and the catalogue routes (4 collections, 15 products). The Render free service had been idle, so `/health` took about 12 seconds on the first request. There is no uptime guarantee. A fuller list of what is and is not built is in [Current status](#current-status).
 
 ## Contents
